@@ -2,10 +2,7 @@ package com.example.web_service;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.*;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -21,11 +18,15 @@ import javafx.util.Pair;
 import javafx.util.converter.IntegerStringConverter;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 public class schermataPrincipale extends Application {
 
     private BorderPane root;
+    ArrayList<Prodotto> listaProdotti = new ArrayList<>();
+
     Scene scene;
     @Override
 
@@ -43,6 +44,10 @@ public class schermataPrincipale extends Application {
         primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
         primaryStage.setOnCloseRequest(event -> event.consume());
         primaryStage.setFullScreen(true);
+        listaProdotti.add(new Prodotto("001", "T-shirt", "Maglietta in cotone", 19.99f, "tshirt.jpg", "S:3, M:1, L:0"));
+        listaProdotti.add(new Prodotto("002", "Jeans", "Jeans stretch uomo", 39.99f, "jeans.jpg", "S:2, M:4, L:1"));
+        listaProdotti.add(new Prodotto("003", "Felpa", "Felpa con cappuccio", 49.99f, "felpa.jpg", "M:5, L:2"));
+        listaProdotti.add(new Prodotto("004", "Giacca", "Giacca invernale", 99.99f, "giacca.jpg", "S:1, M:2, L:3, XL:1"));
 
 
     }
@@ -120,14 +125,13 @@ public class schermataPrincipale extends Application {
         Label nomeText = creaLabel("Nome prodotto:");
         TextField nome = creaTextField("Inserisci nome prodotto");
 
-        // Crea un HBox per ID e Nome sulla stessa riga
         HBox hboxIdNome = new HBox(10, idText, Id, nomeText, nome);
         hboxIdNome.setAlignment(Pos.CENTER_LEFT);
         hboxIdNome.setSpacing(10);
 
         idText.setPrefWidth(100);
         nomeText.setPrefWidth(120);
-        Id.setPrefWidth(120);
+        Id.setPrefWidth(130);
         nome.setPrefWidth(200);
 
         // Descrizione prodotto
@@ -429,10 +433,59 @@ public class schermataPrincipale extends Application {
         VBox vbox = new VBox(15);
         vbox.setPadding(new Insets(20));
         vbox.setStyle("-fx-background-color: #ecf0f1;");
+
         Label cercaLabel = creaLabel("Cerca prodotto per nome o ID:");
         TextField cercaText = creaTextField("Cerca prodotto");
+        cercaText.setMaxWidth(200);
+
         Button cerca = creaButton("Cerca");
-        vbox.getChildren().addAll(cercaLabel,cercaText,cerca);
+
+        Label risultatoLabel = new Label();
+        risultatoLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+
+        cerca.setOnAction(e -> {
+            String input = cercaText.getText().trim();
+            Prodotto trovato = null;
+
+            for (Prodotto prodotto : listaProdotti) {
+                if (prodotto.getId().equals(input) || prodotto.getNome().equalsIgnoreCase(input)) {
+                    trovato = prodotto;
+                    break;
+                }
+            }
+
+            if (trovato != null) {
+                risultatoLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;-fx-text-fill: #2c3e50; -fx-background-color: #ecf0f1; -fx-padding: 10px; -fx-border-radius: 5px; -fx-border-color: #3498db;-fx-border-width: 2px; -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 5, 0, 2, 2);" );
+
+                risultatoLabel.setText("Prodotto trovato:\n\n" + "ID: " + trovato.getId() + "\n" + "Nome: " + trovato.getNome() + "\n" + "Descrizione: " + trovato.getDescrizione() + "\n" + "Prezzo: " + trovato.getPrezzo() + " €\n" + "Taglie: " + trovato.getTaglie());
+            } else {
+                risultatoLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: red;");
+                risultatoLabel.setText("Nessun prodotto trovato con ID o nome \"" + input + "\".");
+            }
+        });
+
+        cercaText.setOnAction(e -> {
+            String input = cercaText.getText().trim();
+            Prodotto trovato = null;
+
+            for (Prodotto prodotto : listaProdotti) {
+                if (prodotto.getId().equals(input) || prodotto.getNome().equalsIgnoreCase(input)) {
+                    trovato = prodotto;
+                    break;
+                }
+            }
+
+            if (trovato != null) {
+                risultatoLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;-fx-text-fill: #2c3e50; -fx-background-color: #ecf0f1; -fx-padding: 10px; -fx-border-radius: 5px; -fx-border-color: #3498db;-fx-border-width: 2px; -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 5, 0, 2, 2);" );
+
+                risultatoLabel.setText("Prodotto trovato:\n\n" + "ID: " + trovato.getId() + "\n" + "Nome: " + trovato.getNome() + "\n" + "Descrizione: " + trovato.getDescrizione() + "\n" + "Prezzo: " + trovato.getPrezzo() + " €\n" + "Taglie: " + trovato.getTaglie());
+            } else {
+                risultatoLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: red;");
+                risultatoLabel.setText("Nessun prodotto trovato con ID o nome \"" + input + "\".");
+            }
+        });
+
+        vbox.getChildren().addAll(cercaLabel, cercaText, cerca, risultatoLabel);
         return vbox;
     }
 
@@ -441,24 +494,167 @@ public class schermataPrincipale extends Application {
         vbox.setPadding(new Insets(20));
         vbox.setStyle("-fx-background-color: #ecf0f1;");
 
-        TableView<String> table = new TableView<>();
-        table.setPlaceholder(new Label("Nessun prodotto disponibile"));
         Label prodottiDisponibili = creaLabel("Prodotti disponibili:");
+
+        TableView<Prodotto> table = new TableView<>();
+        table.setPlaceholder(new Label("Nessun prodotto disponibile"));
+        table.setMaxWidth(650);
+        table.setPrefHeight(300);
+
+        // Colonna ID
+        TableColumn<Prodotto, String> colId = new TableColumn<>("ID");
+        colId.setPrefWidth(50);
+        colId.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getId()));
+
+        // Colonna Nome
+        TableColumn<Prodotto, String> colNome = new TableColumn<>("Nome");
+        colNome.setPrefWidth(100);
+        colNome.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNome()));
+
+        // Colonna Descrizione
+        TableColumn<Prodotto, String> colDescrizione = new TableColumn<>("Descrizione");
+        colDescrizione.setPrefWidth(200);
+        colDescrizione.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDescrizione()));
+        colDescrizione.setCellFactory(tc -> {
+            TableCell<Prodotto, String> cell = new TableCell<>() {
+                private final Text text = new Text();
+                {
+                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(10));
+                    setGraphic(text);
+                }
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    text.setText(empty || item == null ? "" : item);
+                }
+            };
+            return cell;
+        });
+
+        // Colonna Prezzo
+        TableColumn<Prodotto, String> colPrezzo = new TableColumn<>("Prezzo");
+        colPrezzo.setPrefWidth(100);
+        colPrezzo.setCellValueFactory(data -> new SimpleStringProperty(String.format("%.2f €", data.getValue().getPrezzo())));
+
+        TableColumn<Prodotto, String> colFoto = new TableColumn<>("Foto");
+        colFoto.setPrefWidth(50);
+        colFoto.setCellValueFactory(data -> {
+            String path = data.getValue().getFoto();
+            return new SimpleStringProperty((path != null && !path.isBlank()) ? "Sì" : "No");
+        });
+
+        // Colonna Taglie
+        TableColumn<Prodotto, String> colTaglie = new TableColumn<>("Taglie");
+        colTaglie.setPrefWidth(150);
+        colTaglie.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getTaglie()));
+        colTaglie.setCellFactory(tc -> {
+            TableCell<Prodotto, String> cell = new TableCell<>() {
+                private final Text text = new Text();
+                {
+                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(10));
+                    setGraphic(text);
+                }
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    text.setText(empty || item == null ? "" : item.replaceAll(", ", "\n"));
+                }
+            };
+            return cell;
+        });
+
+        table.getColumns().addAll(colId, colNome, colDescrizione, colPrezzo, colFoto, colTaglie);
+
+        Prodotto esempio = new Prodotto("001", "T-shirt", "Maglietta in cotone super comoda da indossare ovunque",
+                19.99f, "tshirt.jpg", "S:3, M:1, L:0");
+        Prodotto esempio2 = new Prodotto("002", "Felpa", "Felpa oversize con cappuccio e stampa moderna",
+                39.99f, "", "M:2, L:4, XL:1");
+
+        table.getItems().addAll(esempio, esempio2);
 
         vbox.getChildren().addAll(prodottiDisponibili, table);
         return vbox;
     }
 
+
+
+
     private Pane schermataElimina() {
         VBox vbox = new VBox(15);
         vbox.setPadding(new Insets(20));
         vbox.setStyle("-fx-background-color: #ecf0f1;");
-        Label idText = creaLabel("Inserisci ID del prodotto da eliminare:");
-        TextField id=creaTextField("ID del prodotto");
-        Button elimina= creaButton("Elimina");
-        vbox.getChildren().addAll(idText,id,elimina);
+
+        Label idText = creaLabel("Inserisci ID o nome del prodotto da eliminare:");
+        TextField campoId = creaTextField("ID o Nome del prodotto");
+        campoId.setMaxWidth(200);
+        Button cercaButton = creaButton("Cerca");
+        Label risultatoLabel = new Label();
+        risultatoLabel.setWrapText(true);
+        risultatoLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #333333;");
+
+        Button eliminaButton = creaButton("Conferma eliminazione");
+        eliminaButton.setVisible(false);
+
+        Runnable cercaEEliminaProdotto = () -> {
+            String input = campoId.getText().trim();
+            risultatoLabel.setText("");
+            eliminaButton.setVisible(false);
+
+            if (input.isEmpty()) {
+                risultatoLabel.setText("Inserisci un ID o nome valido.");
+                risultatoLabel.setStyle("-fx-text-fill: red;");
+                return;
+            }
+
+            Prodotto trovato = listaProdotti.stream()
+                    .filter(p -> p.getId().equalsIgnoreCase(input) || p.getNome().equalsIgnoreCase(input))
+                    .findFirst().orElse(null);
+
+            if (trovato != null) {
+                risultatoLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #2c3e50; -fx-background-color: #ecf0f1; -fx-padding: 10px; -fx-border-radius: 5px; -fx-border-color: #3498db; -fx-border-width: 2px; -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 5, 0, 2, 2);");
+                risultatoLabel.setText("Prodotto trovato:\n\n" +
+                        "ID: " + trovato.getId() + "\n" +
+                        "Nome: " + trovato.getNome() + "\n" +
+                        "Descrizione: " + trovato.getDescrizione() + "\n" +
+                        "Prezzo: " + trovato.getPrezzo() + " €\n" +
+                        "Taglie: " + trovato.getTaglie());
+
+                eliminaButton.setVisible(true);
+
+                eliminaButton.setOnAction(ev -> {
+                    Stage stage = (Stage) eliminaButton.getScene().getWindow();
+
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                    alert.setTitle("Conferma eliminazione");
+                    alert.setHeaderText("Sei sicuro di voler eliminare il prodotto \"" + trovato.getNome() + "\"?");
+                    alert.setContentText("L'operazione non può essere annullata.");
+                    alert.initOwner(stage);
+
+                    Optional<ButtonType> result = alert.showAndWait();
+                    if (result.isPresent() && result.get() == ButtonType.OK) {
+                        listaProdotti.remove(trovato);
+                        risultatoLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+                        risultatoLabel.setText("Prodotto eliminato con successo.");
+                        eliminaButton.setVisible(false);
+                    }
+                });
+
+            } else {
+                risultatoLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: red;");
+                risultatoLabel.setText("Nessun prodotto trovato con ID o nome \"" + input + "\".");
+            }
+        };
+
+        cercaButton.setOnAction(e -> cercaEEliminaProdotto.run());
+        campoId.setOnAction(e -> cercaEEliminaProdotto.run());
+
+        vbox.getChildren().addAll(idText, campoId, cercaButton, risultatoLabel, eliminaButton);
         return vbox;
     }
+
+
+
+
 
     private Label creaLabel(String testo) {
         Label label = new Label(testo);
