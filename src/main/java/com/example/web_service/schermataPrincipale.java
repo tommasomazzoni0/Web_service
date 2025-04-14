@@ -21,10 +21,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 public class schermataPrincipale extends Application {
 
     private BorderPane root;
+    Server server= new Server();
     ArrayList<Prodotto> listaProdotti = new ArrayList<>();
 
     Scene scene;
@@ -163,12 +165,10 @@ public class schermataPrincipale extends Application {
 
         Label fotoCaricataLabel = creaLabel("Foto caricata correttamente");
         fotoCaricataLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #00FF00; -fx-font-weight: bold;");
-        Button eliminaFotoButton = creaButton("Elimina foto");
-
-        BooleanProperty fotoCaricata = new SimpleBooleanProperty(false);
 
         fotoCaricataLabel.setVisible(false);
-        eliminaFotoButton.setVisible(false);
+
+        BooleanProperty fotoCaricata = new SimpleBooleanProperty(false);
 
         caricaFotoButton.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
@@ -181,19 +181,11 @@ public class schermataPrincipale extends Application {
             }
         });
 
-        eliminaFotoButton.setOnAction(e -> {
-            fotoCaricata.set(false);
-        });
-
         fotoCaricata.addListener((observable, oldValue, newValue) -> {
             if (newValue) {
-                caricaFotoButton.setVisible(false);
                 fotoCaricataLabel.setVisible(true);
-                eliminaFotoButton.setVisible(true);
             } else {
-                caricaFotoButton.setVisible(true);
                 fotoCaricataLabel.setVisible(false);
-                eliminaFotoButton.setVisible(false);
             }
         });
 
@@ -236,7 +228,6 @@ public class schermataPrincipale extends Application {
         tableContainer.setMaxHeight(200);
         tableContainer.setMaxWidth(200);
 
-
         // Gestione errore
         Label erroreLabel = new Label("");
         erroreLabel.setStyle("-fx-text-fill: red; -fx-font-size: 14px;");
@@ -258,6 +249,7 @@ public class schermataPrincipale extends Application {
             if (quantitaStr.matches("[0-9]+")) {
                 int quantitaPerTaglia = Integer.parseInt(quantitaStr);
                 tabellaTaglie.getItems().add(new Pair<>(taglia, quantitaPerTaglia));
+                tagliaText.getItems().remove(taglia);  // Rimuove la taglia aggiunta
                 tagliaText.setValue("Taglie disponibili");
                 campoQuantitaTaglia.clear();
             } else {
@@ -265,14 +257,47 @@ public class schermataPrincipale extends Application {
             }
         });
 
+        // Gestione rimozione di una taglia dalla tabella
+        tabellaTaglie.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                Pair<String, Integer> selectedItem = tabellaTaglie.getSelectionModel().getSelectedItem();
+                if (selectedItem != null) {
+                    tabellaTaglie.getItems().remove(selectedItem);
+                    tagliaText.getItems().add(selectedItem.getKey());  // Reinserisce la taglia nell'elenco
+                }
+            }
+        });
+
         HBox hboxTaglie = new HBox(10, tagliaText, campoQuantitaTaglia, aggiungiTaglia);
         hboxTaglie.setAlignment(Pos.CENTER_LEFT);
         Button inserisci = creaButton("Inserisci");
 
-        vbox.getChildren().addAll(hboxIdNome, descrizioneText, descrizione, hboxPrezzo, taglieLabel, hboxTaglie, erroreLabel, tableContainer, caricaFotoButton, fotoCaricataLabel, eliminaFotoButton, inserisci);
+        // Gestione dell'azione del pulsante "Inserisci"
+        inserisci.setOnAction(e -> {
+            String nomeProdotto = nome.getText().trim();
+            String descrizioneProdotto = descrizione.getText().trim();
+            String prezzoProdotto = prezzo.getText().trim();
+            String taglieProdotto = tabellaTaglie.getItems().stream()
+                    .map(pair -> pair.getKey() + ": " + pair.getValue())
+                    .collect(Collectors.joining(", "));
+
+            // Controllo che i campi obbligatori non siano vuoti
+            if (nomeProdotto.isEmpty() || descrizioneProdotto.isEmpty() || prezzoProdotto.isEmpty() || tabellaTaglie.getItems().isEmpty()) {
+                erroreLabel.setText("Tutti i campi obbligatori devono essere compilati.");
+                return;
+            }
+
+            // Chiamata alla funzione inserisciProdotto
+            String risposta = server.inserisciProdotto(nomeProdotto, descrizioneProdotto, prezzoProdotto, taglieProdotto);
+            erroreLabel.setText(risposta);  // Mostra la risposta del server
+        });
+
+        vbox.getChildren().addAll(hboxIdNome, descrizioneText, descrizione, hboxPrezzo, taglieLabel, hboxTaglie, erroreLabel, tableContainer, caricaFotoButton, fotoCaricataLabel, inserisci);
 
         return vbox;
     }
+
+
 
 
 
@@ -490,6 +515,13 @@ public class schermataPrincipale extends Application {
     }
 
     private Pane schermataVisualizza() {
+        String risposta = server.mostraTuttiProdotti();
+
+        if (risposta == null || risposta.isEmpty()) {
+            Label errore = new Label("Errore nel recupero dei prodotti.");
+            return new VBox(errore);
+        }
+
         VBox vbox = new VBox(15);
         vbox.setPadding(new Insets(20));
         vbox.setStyle("-fx-background-color: #ecf0f1;");
@@ -536,6 +568,7 @@ public class schermataPrincipale extends Application {
         colPrezzo.setPrefWidth(100);
         colPrezzo.setCellValueFactory(data -> new SimpleStringProperty(String.format("%.2f €", data.getValue().getPrezzo())));
 
+        // Colonna Foto
         TableColumn<Prodotto, String> colFoto = new TableColumn<>("Foto");
         colFoto.setPrefWidth(50);
         colFoto.setCellValueFactory(data -> {
@@ -565,16 +598,31 @@ public class schermataPrincipale extends Application {
 
         table.getColumns().addAll(colId, colNome, colDescrizione, colPrezzo, colFoto, colTaglie);
 
-        Prodotto esempio = new Prodotto("001", "T-shirt", "Maglietta in cotone super comoda da indossare ovunque",
-                19.99f, "tshirt.jpg", "S:3, M:1, L:0");
-        Prodotto esempio2 = new Prodotto("002", "Felpa", "Felpa oversize con cappuccio e stampa moderna",
-                39.99f, "", "M:2, L:4, XL:1");
+        // Elabora la risposta del PHP
+        String[] prodottiArray = risposta.split(" \\| ");
 
-        table.getItems().addAll(esempio, esempio2);
+
+        for (String prodottoStr : prodottiArray) {
+            String[] datiProdotto = prodottoStr.split("_");
+
+
+            if (datiProdotto.length == 5) {
+
+                String id = datiProdotto[0];
+                String nome = datiProdotto[1];
+                String descrizione = datiProdotto[2];
+                float prezzo = Float.parseFloat(datiProdotto[3]);
+                String taglie = datiProdotto[4];
+
+                Prodotto prodotto = new Prodotto(id, nome, descrizione, prezzo, "si", taglie);
+                table.getItems().add(prodotto);
+            }
+        }
 
         vbox.getChildren().addAll(prodottiDisponibili, table);
         return vbox;
     }
+
 
 
 
