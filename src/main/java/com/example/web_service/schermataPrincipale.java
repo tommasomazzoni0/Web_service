@@ -27,12 +27,15 @@ public class schermataPrincipale extends Application {
 
     private BorderPane root;
     Server server= new Server();
-    ArrayList<Prodotto> listaProdotti = new ArrayList<>();
+    ArrayList<Prodotto> listaProdotti;
+
 
     Scene scene;
     @Override
 
     public void start(Stage primaryStage) {
+        listaProdotti = server.getProdotti();
+
         root = new BorderPane();
         root.setStyle("-fx-background-color: #f4f6f9;");
         VBox barraLaterale = creaSidebar();
@@ -46,11 +49,6 @@ public class schermataPrincipale extends Application {
         primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
         primaryStage.setOnCloseRequest(event -> event.consume());
         primaryStage.setFullScreen(true);
-        listaProdotti.add(new Prodotto("001", "T-shirt", "Maglietta in cotone", 19.99f, "tshirt.jpg", "S:3, M:1, L:0"));
-        listaProdotti.add(new Prodotto("002", "Jeans", "Jeans stretch uomo", 39.99f, "jeans.jpg", "S:2, M:4, L:1"));
-        listaProdotti.add(new Prodotto("003", "Felpa", "Felpa con cappuccio", 49.99f, "felpa.jpg", "M:5, L:2"));
-        listaProdotti.add(new Prodotto("004", "Giacca", "Giacca invernale", 99.99f, "giacca.jpg", "S:1, M:2, L:3, XL:1"));
-
 
     }
 
@@ -531,7 +529,7 @@ public class schermataPrincipale extends Application {
         TableView<Prodotto> table = new TableView<>();
         table.setPlaceholder(new Label("Nessun prodotto disponibile"));
         table.setMaxWidth(650);
-        table.setPrefHeight(300);
+        VBox.setVgrow(table, Priority.ALWAYS);
 
         // Colonna ID
         TableColumn<Prodotto, String> colId = new TableColumn<>("ID");
@@ -649,8 +647,8 @@ public class schermataPrincipale extends Application {
             eliminaButton.setVisible(false);
 
             if (input.isEmpty()) {
-                risultatoLabel.setText("Inserisci un ID o nome valido.");
                 risultatoLabel.setStyle("-fx-text-fill: red;");
+                risultatoLabel.setText("Inserisci un ID o nome valido.");
                 return;
             }
 
@@ -680,9 +678,25 @@ public class schermataPrincipale extends Application {
 
                     Optional<ButtonType> result = alert.showAndWait();
                     if (result.isPresent() && result.get() == ButtonType.OK) {
-                        listaProdotti.remove(trovato);
-                        risultatoLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-                        risultatoLabel.setText("Prodotto eliminato con successo.");
+                        try {
+                            int id = Integer.parseInt(trovato.getId());
+                            String rispostaServer = Server.eliminaProdotto(id); // Chiamata al PHP
+                            System.out.println("Risposta dal server: " + rispostaServer);
+
+                            if (rispostaServer.toLowerCase().contains("successo")) {
+                                listaProdotti.remove(trovato);
+                                risultatoLabel.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
+                                risultatoLabel.setText("Prodotto eliminato con successo.");
+                            } else {
+                                risultatoLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
+                                risultatoLabel.setText("Errore durante l'eliminazione del prodotto: " + rispostaServer);
+                            }
+
+                        } catch (NumberFormatException ex) {
+                            risultatoLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
+                            risultatoLabel.setText("ID prodotto non valido.");
+                        }
+
                         eliminaButton.setVisible(false);
                     }
                 });
@@ -699,6 +713,7 @@ public class schermataPrincipale extends Application {
         vbox.getChildren().addAll(idText, campoId, cercaButton, risultatoLabel, eliminaButton);
         return vbox;
     }
+
 
 
 
@@ -735,6 +750,8 @@ public class schermataPrincipale extends Application {
         );
         return button;
     }
+
+
 
     public static void main(String[] args) {
         launch();

@@ -1,13 +1,11 @@
 package com.example.web_service;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 
 public class Server {
 
@@ -74,7 +72,94 @@ public class Server {
             e.printStackTrace();
             return "Errore: " + e.getMessage();
         }
-
-
     }
+
+    public static String eliminaProdotto(int id) {
+        String urlString = "https://lucacassina.altervista.org/ecommerce/eliminaProdotto.php";
+        StringBuilder response = new StringBuilder();
+
+        try {
+            URL url = new URL(urlString);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+
+            String urlParameters = "id=" + id;
+
+            OutputStream os = conn.getOutputStream();
+            os.write(urlParameters.getBytes());
+            os.flush();
+            os.close();
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            String inputLine;
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Errore di connessione.";
+        }
+
+        return response.toString();
+    }
+
+    public static ArrayList<Prodotto> getProdotti() {
+        ArrayList<Prodotto> prodotti = new ArrayList<>();
+        String urlString = "https://lucacassina.altervista.org/ecommerce/mostraTutti.php";
+        StringBuilder response = new StringBuilder();
+
+        try {
+            URL url = new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String inputLine;
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        String risposta = response.toString();
+        System.out.println("Risposta dal server: " + risposta);
+
+        // Ogni prodotto è separato da |
+        String[] prodottiArray = risposta.split("\\|");
+
+        for (String prodottoStr : prodottiArray) {
+            // Elimina spazi extra
+            prodottoStr = prodottoStr.trim();
+
+            // Dividi per "_", ma solo i primi 4 elementi
+            String[] parti = prodottoStr.split("_", 5);
+
+            if (parti.length == 5) {
+                try {
+                    String id = parti[0].trim();
+                    String nome = parti[1].trim();
+                    String descrizione = parti[2].trim();
+                    float prezzo = Float.parseFloat(parti[3].trim());
+                    String taglie = parti[4].trim();
+
+                    Prodotto prodotto = new Prodotto(id, nome, descrizione, prezzo, "sì", taglie);
+                    prodotti.add(prodotto);
+
+                } catch (NumberFormatException e) {
+                    System.out.println("Errore nel parsing del prodotto: " + prodottoStr);
+                }
+            } else {
+                System.out.println("Formato non valido per il prodotto: " + prodottoStr);
+            }
+        }
+
+        return prodotti;
+    }
+
+
 }
