@@ -56,14 +56,13 @@ public class Server {
             // Ottieni la risposta dal server
             int statusCode = conn.getResponseCode();
             if (statusCode == HttpURLConnection.HTTP_OK) {
-                // Leggi la risposta
                 try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
                     String inputLine;
-                    StringBuilder response = new StringBuilder();
+                   StringBuilder response = new StringBuilder();
                     while ((inputLine = in.readLine()) != null) {
                         response.append(inputLine);
                     }
-                    return response.toString();  // Risposta del PHP
+                    return response.toString();
                 }
             } else {
                 return "Errore nella richiesta: " + statusCode;
@@ -105,6 +104,49 @@ public class Server {
         return response.toString();
     }
 
+    public static boolean aggiornaProdotto(String id, String nome, String descrizione, float prezzo, String taglie) {
+        String urlString = "https://lucacassina.altervista.org/ecommerce/aggiornaProdotto.php";
+        String charset = "UTF-8";
+
+        try {
+            String dati = String.format("id_prodotto=%s&nome=%s&descrizione=%s&prezzo=%s&taglie=%s",
+                    URLEncoder.encode(id, charset),
+                    URLEncoder.encode(nome, charset),
+                    URLEncoder.encode(descrizione, charset),
+                    URLEncoder.encode(String.valueOf(prezzo), charset),
+                    URLEncoder.encode(taglie, charset)
+            );
+
+            URL url = new URL(urlString);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=" + charset);
+            conn.setRequestProperty("Content-Length", String.valueOf(dati.length()));
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(dati.getBytes(charset));
+            }
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), charset));
+            StringBuilder risposta = new StringBuilder();
+            String riga;
+            while ((riga = reader.readLine()) != null) {
+                risposta.append(riga);
+            }
+            reader.close();
+
+            System.out.println("Risposta dal server: " + risposta);
+
+            return risposta.toString().contains("successo");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
     public static ArrayList<Prodotto> getProdotti() {
         ArrayList<Prodotto> prodotti = new ArrayList<>();
         String urlString = "https://lucacassina.altervista.org/ecommerce/mostraTutti.php";
@@ -129,14 +171,11 @@ public class Server {
         String risposta = response.toString();
         System.out.println("Risposta dal server: " + risposta);
 
-        // Ogni prodotto è separato da |
         String[] prodottiArray = risposta.split("\\|");
 
         for (String prodottoStr : prodottiArray) {
-            // Elimina spazi extra
             prodottoStr = prodottoStr.trim();
 
-            // Dividi per "_", ma solo i primi 4 elementi
             String[] parti = prodottoStr.split("_", 5);
 
             if (parti.length == 5) {

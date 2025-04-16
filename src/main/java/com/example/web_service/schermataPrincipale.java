@@ -3,6 +3,8 @@ package com.example.web_service;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.*;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -19,6 +21,8 @@ import javafx.util.converter.IntegerStringConverter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -120,18 +124,14 @@ public class schermataPrincipale extends Application {
         vbox.setStyle("-fx-background-color: #ecf0f1;");
 
         // Etichette e campi per ID e Nome sulla stessa riga
-        Label idText = creaLabel("ID prodotto:");
-        TextField Id = creaTextField("Inserisci id prodotto");
         Label nomeText = creaLabel("Nome prodotto:");
         TextField nome = creaTextField("Inserisci nome prodotto");
 
-        HBox hboxIdNome = new HBox(10, idText, Id, nomeText, nome);
+        HBox hboxIdNome = new HBox(10, nomeText, nome);
         hboxIdNome.setAlignment(Pos.CENTER_LEFT);
         hboxIdNome.setSpacing(10);
 
-        idText.setPrefWidth(100);
         nomeText.setPrefWidth(120);
-        Id.setPrefWidth(130);
         nome.setPrefWidth(200);
 
         // Descrizione prodotto
@@ -226,9 +226,12 @@ public class schermataPrincipale extends Application {
         tableContainer.setMaxHeight(200);
         tableContainer.setMaxWidth(200);
 
-        // Gestione errore
         Label erroreLabel = new Label("");
         erroreLabel.setStyle("-fx-text-fill: red; -fx-font-size: 14px;");
+
+        Label successoLabel = new Label("");
+        successoLabel.setStyle("-fx-font-size: 14px; -fx-text-fill:green;");
+        successoLabel.setVisible(false);
 
         aggiungiTaglia.setOnAction(e -> {
             String taglia = tagliaText.getValue();
@@ -287,10 +290,16 @@ public class schermataPrincipale extends Application {
 
             // Chiamata alla funzione inserisciProdotto
             String risposta = server.inserisciProdotto(nomeProdotto, descrizioneProdotto, prezzoProdotto, taglieProdotto);
-            erroreLabel.setText(risposta);  // Mostra la risposta del server
+            if (risposta.equals("Prodotto inserito con successo.")) {
+                successoLabel.setText("Prodotto inserito con successo!");
+                successoLabel.setVisible(true);
+            } else {
+                erroreLabel.setText(risposta);
+            }
         });
 
-        vbox.getChildren().addAll(hboxIdNome, descrizioneText, descrizione, hboxPrezzo, taglieLabel, hboxTaglie, erroreLabel, tableContainer, caricaFotoButton, fotoCaricataLabel, inserisci);
+        // Aggiungi la label di successo sopra il pulsante "Inserisci"
+        vbox.getChildren().addAll(hboxIdNome, descrizioneText, descrizione, hboxPrezzo, taglieLabel, hboxTaglie, erroreLabel, tableContainer, caricaFotoButton, fotoCaricataLabel, successoLabel, inserisci);
 
         return vbox;
     }
@@ -304,153 +313,182 @@ public class schermataPrincipale extends Application {
         vbox.setPadding(new Insets(20));
         vbox.setStyle("-fx-background-color: #ecf0f1;");
 
-        Label idText = creaLabel("ID prodotto da aggiornare:");
-        TextField Id = creaTextField("Inserisci id prodotto");
+        Label idLabel = creaLabel("ID prodotto da aggiornare:");
+        ChoiceBox<String> idChoiceBox = new ChoiceBox<>();
+        idChoiceBox.setPrefWidth(150);
+        idChoiceBox.setValue("Seleziona ID...");
+
         Label nomeText = creaLabel("Nuovo nome prodotto:");
         TextField nome = creaTextField("Inserisci nome prodotto");
 
-        HBox hboxIdNome = new HBox(10, idText, Id, nomeText, nome);
+        HBox hboxIdNome = new HBox(10, idLabel, idChoiceBox, nomeText, nome);
         hboxIdNome.setAlignment(Pos.CENTER_LEFT);
-        hboxIdNome.setSpacing(10);
 
-        idText.setPrefWidth(200);
-        nomeText.setPrefWidth(170);
-        Id.setPrefWidth(150);
-        nome.setPrefWidth(200);
         Label descrizioneLabel = creaLabel("Nuova descrizione:");
         TextArea descrizione = creaTextArea("Nuova descrizione del prodotto");
-        Button aggiorna = creaButton("Aggiorna");
 
-        Label prezzoText = new Label("Prezzo:");
-        prezzoText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #333333;");
-
+        Label prezzoText = creaLabel("Prezzo:");
         TextField prezzo = new TextField();
-        UnaryOperator<TextFormatter.Change> integerFilter = change -> {
-            String newText = change.getText();
-            if (newText.matches("[0-9]*[.]?[0-9]*")) {
-                return change;
-            }
-            return null;
-        };
-
-        TextFormatter<String> formatter = new TextFormatter<>(integerFilter);
-        prezzo.setTextFormatter(formatter);
         prezzo.setPrefWidth(120);
-        Label euroSymbol = new Label("€");
-        euroSymbol.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #333333;");
-        HBox hbox = new HBox(10);
-        hbox.getChildren().addAll(prezzoText, prezzo, euroSymbol);
+        prezzo.setTextFormatter(new TextFormatter<>(change -> {
+            String newText = change.getText();
+            return newText.matches("[0-9]*[.]?[0-9]*") ? change : null;
+        }));
+        Label euroSymbol = creaLabel("€");
+        HBox hboxPrezzo = new HBox(10, prezzoText, prezzo, euroSymbol);
 
         Button caricaFotoButton = creaButton("Carica nuova foto");
-
         Label fotoCaricataLabel = creaLabel("Nuova foto caricata correttamente");
         fotoCaricataLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #00FF00; -fx-font-weight: bold;");
         Button eliminaFotoButton = creaButton("Elimina foto");
-
-        BooleanProperty fotoCaricata = new SimpleBooleanProperty(false);
-
         fotoCaricataLabel.setVisible(false);
         eliminaFotoButton.setVisible(false);
 
+        BooleanProperty fotoCaricata = new SimpleBooleanProperty(false);
         caricaFotoButton.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Immagini", "*.png", "*.jpg", "*.jpeg", "*.gif"));
-
             File selectedFile = fileChooser.showOpenDialog(scene.getWindow());
-
-            if (selectedFile != null) {
-                fotoCaricata.set(true);
-            }
+            if (selectedFile != null) fotoCaricata.set(true);
+        });
+        eliminaFotoButton.setOnAction(e -> fotoCaricata.set(false));
+        fotoCaricata.addListener((obs, oldVal, newVal) -> {
+            caricaFotoButton.setVisible(!newVal);
+            fotoCaricataLabel.setVisible(newVal);
+            eliminaFotoButton.setVisible(newVal);
         });
 
-        eliminaFotoButton.setOnAction(e -> {
-            fotoCaricata.set(false);
-        });
-
-        fotoCaricata.addListener((observable, oldValue, newValue) -> {
-            if (newValue) {
-                caricaFotoButton.setVisible(false);
-                fotoCaricataLabel.setVisible(true);
-                eliminaFotoButton.setVisible(true);
-            } else {
-                caricaFotoButton.setVisible(true);
-                fotoCaricataLabel.setVisible(false);
-                eliminaFotoButton.setVisible(false);
-            }
-        });
         Label taglieLabel = creaLabel("Taglie disponibili:");
         ChoiceBox<String> tagliaText = new ChoiceBox<>();
-        tagliaText.getItems().addAll("XS", "S", "M", "L", "XL", "XXL");
+        ObservableList<String> taglieDisponibili = FXCollections.observableArrayList("XS", "S", "M", "L", "XL", "XXL");
+        tagliaText.setItems(taglieDisponibili);
         tagliaText.setValue("Taglie disponibili");
-        tagliaText.setPrefWidth(200);
 
         TextField campoQuantitaTaglia = new TextField();
         campoQuantitaTaglia.setPromptText("Quantità per taglia");
-
-        UnaryOperator<TextFormatter.Change> quantityFilter = change -> {
-            String newText = change.getText();
-            if (newText.matches("[0-9]*")) {
-                return change;
-            }
-            return null;
-        };
-        campoQuantitaTaglia.setTextFormatter(new TextFormatter<>(quantityFilter));
-
+        campoQuantitaTaglia.setTextFormatter(new TextFormatter<>(change -> change.getText().matches("[0-9]*") ? change : null));
         Button aggiungiTaglia = creaButton("Aggiungi");
 
         TableView<Pair<String, Integer>> tabellaTaglie = new TableView<>();
         TableColumn<Pair<String, Integer>, String> colTaglia = new TableColumn<>("Taglia");
         TableColumn<Pair<String, Integer>, Integer> colQuantita = new TableColumn<>("Quantità");
 
-        colTaglia.setPrefWidth(100);
-        colQuantita.setPrefWidth(100);
         colTaglia.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getKey()));
         colQuantita.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getValue()).asObject());
-
+        colTaglia.setPrefWidth(100);
+        colQuantita.setPrefWidth(100);
         tabellaTaglie.getColumns().addAll(colTaglia, colQuantita);
         tabellaTaglie.setPrefWidth(200);
         tabellaTaglie.setMaxWidth(200);
         tabellaTaglie.setPrefHeight(200);
         tabellaTaglie.setMaxHeight(200);
-        tabellaTaglie.setPrefHeight(300);
 
-        VBox container = new VBox(tabellaTaglie);
-        container.setPrefWidth(200);
-        container.setMaxWidth(200);
-        container.setPrefHeight(300);
-        Label erroreLabel = new Label("");
+        VBox tableContainer = new VBox(tabellaTaglie);
+        tableContainer.setMaxHeight(200);
+        tableContainer.setMaxWidth(200);
+
+        Label erroreLabel = creaLabel("");
         erroreLabel.setStyle("-fx-text-fill: red; -fx-font-size: 14px;");
+
+        // Aggiungi l'etichetta di successo
+        Label successoLabel = creaLabel("");
+        successoLabel.setStyle("-fx-text-fill: green; -fx-font-size: 14px;");
+        successoLabel.setVisible(false);  // La stringa di successo è inizialmente invisibile
 
         aggiungiTaglia.setOnAction(e -> {
             String taglia = tagliaText.getValue();
             String quantitaStr = campoQuantitaTaglia.getText().trim();
             erroreLabel.setText("");
-
-            if (taglia.equals("Taglie disponibili")) {
-                erroreLabel.setText("Devi selezionare una taglia.");
+            if (taglia.equals("Taglie disponibili") || quantitaStr.isEmpty()) {
+                erroreLabel.setText("Inserisci una taglia e una quantità valide.");
                 return;
             }
-            if (quantitaStr.isEmpty()) {
-                erroreLabel.setText("Devi inserire una quantità per la taglia selezionata.");
-                return;
-            }
+            int quantita = Integer.parseInt(quantitaStr);
 
-            if (quantitaStr.matches("[0-9]+")) {
-                int quantitaPerTaglia = Integer.parseInt(quantitaStr);
-                tabellaTaglie.getItems().add(new Pair<>(taglia, quantitaPerTaglia));
-                tagliaText.setValue("Taglie disponibili");
-                campoQuantitaTaglia.clear();
-            } else {
-                erroreLabel.setText("Devi inserire una quantità valida (numero intero).");
+            tabellaTaglie.getItems().removeIf(item -> item.getKey().equals(taglia));
+
+            tabellaTaglie.getItems().add(new Pair<>(taglia, quantita));
+
+            taglieDisponibili.remove(taglia);
+            tagliaText.setValue("Taglie disponibili");
+            campoQuantitaTaglia.clear();
+        });
+
+        tabellaTaglie.setRowFactory(tv -> {
+            TableRow<Pair<String, Integer>> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (!row.isEmpty() && event.getClickCount() == 2) {
+                    Pair<String, Integer> taglia = row.getItem();
+                    tabellaTaglie.getItems().remove(taglia);
+                    if (!taglieDisponibili.contains(taglia.getKey())) {
+                        taglieDisponibili.add(taglia.getKey());
+                        FXCollections.sort(taglieDisponibili);
+                    }
+                }
+            });
+            return row;
+        });
+
+        Button aggiorna = creaButton("Aggiorna");
+        aggiorna.setOnAction(e -> {
+            String id = idChoiceBox.getValue();
+            String nomeVal = nome.getText();
+            String descrizioneVal = descrizione.getText();
+            String prezzoVal = prezzo.getText();
+
+            StringBuilder taglieString = new StringBuilder();
+            for (Pair<String, Integer> item : tabellaTaglie.getItems()) {
+                taglieString.append(item.getKey()).append(":").append(item.getValue()).append(",");
+            }
+            if (taglieString.length() > 0)
+                taglieString.setLength(taglieString.length() - 1);
+
+            // Chiamata al metodo per aggiornare il prodotto
+            server.aggiornaProdotto(id, nomeVal, descrizioneVal, Float.parseFloat(prezzoVal), taglieString.toString());
+
+            // Mostra la stringa di successo
+            successoLabel.setText("Prodotto aggiornato con successo!");
+            successoLabel.setVisible(true);  // Rendi visibile il messaggio di successo
+        });
+
+        ArrayList<Prodotto> prodotti = server.getProdotti();
+        Map<String, Prodotto> mappaProdotti = new HashMap<>();
+        for (Prodotto p : prodotti) {
+            idChoiceBox.getItems().add(p.getId());
+            mappaProdotti.put(p.getId(), p);
+        }
+
+        idChoiceBox.setOnAction(e -> {
+            String selectedId = idChoiceBox.getValue();
+            if (selectedId != null && mappaProdotti.containsKey(selectedId)) {
+                Prodotto p = mappaProdotti.get(selectedId);
+                nome.setText(p.getNome());
+                descrizione.setText(p.getDescrizione());
+                prezzo.setText(String.valueOf(p.getPrezzo()));
+                tabellaTaglie.getItems().clear();
+                taglieDisponibili.setAll("XS", "S", "M", "L", "XL", "XXL");
+                for (String taglia : p.getTaglie().split(",")) {
+                    String[] parts = taglia.split(":");
+                    if (parts.length == 2) {
+                        String tg = parts[0].trim();
+                        int qt = Integer.parseInt(parts[1].trim());
+                        tabellaTaglie.getItems().add(new Pair<>(tg, qt));
+                        taglieDisponibili.remove(tg);
+                    }
+                }
             }
         });
 
         HBox hboxTaglie = new HBox(10, tagliaText, campoQuantitaTaglia, aggiungiTaglia);
-        hboxTaglie.setAlignment(Pos.CENTER_LEFT);
 
-        vbox.getChildren().addAll(hboxIdNome,descrizioneLabel,descrizione,hbox,taglieLabel, hboxTaglie, erroreLabel, tabellaTaglie,caricaFotoButton, fotoCaricataLabel, eliminaFotoButton,aggiorna);
+        vbox.getChildren().addAll(hboxIdNome, descrizioneLabel, descrizione, hboxPrezzo, taglieLabel, hboxTaglie,
+                erroreLabel, tabellaTaglie, caricaFotoButton, fotoCaricataLabel, eliminaFotoButton, successoLabel, aggiorna);
+
         return vbox;
     }
+
+
+
 
     private Pane schermataRicerca() {
         VBox vbox = new VBox(15);
@@ -465,7 +503,7 @@ public class schermataPrincipale extends Application {
 
         Label risultatoLabel = new Label();
         risultatoLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
-
+        listaProdotti= Server.getProdotti();
         cerca.setOnAction(e -> {
             String input = cercaText.getText().trim();
             Prodotto trovato = null;
