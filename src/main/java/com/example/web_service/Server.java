@@ -36,18 +36,15 @@ public class Server {
             URL url = new URL("https://lucacassina.altervista.org/ecommerce/aggiungiProdotto.php");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-            // Imposta il metodo di richiesta (POST)
             conn.setRequestMethod("POST");
-            conn.setDoOutput(true);  // Abilita l'output per inviare dati
+            conn.setDoOutput(true);
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
-            // Prepara i dati da inviare (come stringa codificata URL)
             String postData = "nome=" + URLEncoder.encode(nome, StandardCharsets.UTF_8) +
                     "&descrizione=" + URLEncoder.encode(descrizione, StandardCharsets.UTF_8) +
                     "&prezzo=" + URLEncoder.encode(prezzo, StandardCharsets.UTF_8) +
                     "&taglie=" + URLEncoder.encode(taglie, StandardCharsets.UTF_8);
 
-            // Invia i dati al server
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = postData.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
@@ -136,7 +133,6 @@ public class Server {
             }
             reader.close();
 
-            System.out.println("Risposta dal server: " + risposta);
 
             return risposta.toString().contains("successo");
 
@@ -169,7 +165,6 @@ public class Server {
         }
 
         String risposta = response.toString();
-        System.out.println("Risposta dal server: " + risposta);
 
         String[] prodottiArray = risposta.split("\\|");
 

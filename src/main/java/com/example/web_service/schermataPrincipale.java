@@ -718,9 +718,7 @@ public class schermataPrincipale extends Application {
                     if (result.isPresent() && result.get() == ButtonType.OK) {
                         try {
                             int id = Integer.parseInt(trovato.getId());
-                            String rispostaServer = Server.eliminaProdotto(id); // Chiamata al PHP
-                            System.out.println("Risposta dal server: " + rispostaServer);
-
+                            String rispostaServer = Server.eliminaProdotto(id);
                             if (rispostaServer.toLowerCase().contains("successo")) {
                                 listaProdotti.remove(trovato);
                                 risultatoLabel.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
