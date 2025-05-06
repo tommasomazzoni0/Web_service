@@ -41,44 +41,64 @@ public class schermataPrincipale extends Application {
         listaProdotti = server.getProdotti();
 
         root = new BorderPane();
-        root.setStyle("-fx-background-color: #f4f6f9;");
-        VBox barraLaterale = creaSidebar();
-        root.setLeft(barraLaterale);
+        root.setStyle("-fx-background-color: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);");
+
+        // Create top menu bar
+        HBox topMenu = createTopMenu();
+        root.setTop(topMenu);
+
+        // Create initial dashboard
+        VBox dashboard = createDashboard();
+        root.setCenter(dashboard);
 
         scene = new Scene(root, 1200, 800);
-        primaryStage.setTitle("E-commerce");
+        scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+        primaryStage.setTitle("E-commerce Dashboard");
         primaryStage.setScene(scene);
         primaryStage.setMaximized(true);
         primaryStage.show();
         primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
         primaryStage.setOnCloseRequest(event -> event.consume());
         primaryStage.setFullScreen(true);
-
     }
 
-    private VBox creaSidebar() {
-        VBox barraLaterale = new VBox(20);
-        barraLaterale.setPadding(new Insets(20));
-        barraLaterale.setStyle("-fx-background-color: #2d3e50;");
-        barraLaterale.setPrefWidth(250);
+    private HBox createTopMenu() {
+        HBox menuBar = new HBox(20);
+        menuBar.setPadding(new Insets(15));
+        menuBar.setStyle("-fx-background-color: rgba(0, 0, 0, 0.2); -fx-background-radius: 0 0 20 20;");
+        menuBar.setAlignment(Pos.CENTER);
+
+        // Create clickable logo and title container
+        HBox logoContainer = new HBox(10);
+        logoContainer.setAlignment(Pos.CENTER_LEFT);
+        logoContainer.setStyle("-fx-cursor: hand;");
 
         Image logo = new Image(getClass().getResourceAsStream("/images/logo.png"));
         ImageView logoView = new ImageView(logo);
-        logoView.setFitHeight(150);
+        logoView.setFitHeight(40);
         logoView.setPreserveRatio(true);
         logoView.setSmooth(true);
+        logoView.setEffect(new javafx.scene.effect.Glow(0.5));
 
+        Label titleLabel = new Label("E-commerce Dashboard");
+        titleLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 5, 0, 0, 0);");
 
+        logoContainer.getChildren().addAll(logoView, titleLabel);
 
-        Button Inserisci = creaPulsante("Inserisci Prodotto");
-        Button Aggiorna = creaPulsante("Aggiorna Prodotto");
-        Button Ricerca = creaPulsante("Cerca Prodotto");
-        Button Visualizza = creaPulsante("Visualizza Tutti");
-        Button Elimina = creaPulsante("Elimina Prodotto");
-        Button Esci = creaPulsante("Esci");
+        // Add click event to return to dashboard
+        logoContainer.setOnMouseClicked(e -> root.setCenter(createDashboard()));
+        logoView.setOnMouseClicked(e -> root.setCenter(createDashboard()));
+        titleLabel.setOnMouseClicked(e -> root.setCenter(createDashboard()));
+
+        Button Inserisci = createMenuButton("Inserisci Prodotto");
+        Button Aggiorna = createMenuButton("Aggiorna Prodotto");
+        Button Ricerca = createMenuButton("Cerca Prodotto");
+        Button Visualizza = createMenuButton("Visualizza Tutti");
+        Button Elimina = createMenuButton("Elimina Prodotto");
+        Button Esci = createMenuButton("Esci");
 
         Region spacer = new Region();
-        VBox.setVgrow(spacer, Priority.ALWAYS);
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Inserisci.setOnAction(e -> root.setCenter(schermataInserisci()));
         Aggiorna.setOnAction(e -> root.setCenter(schermataAggiorna()));
@@ -104,16 +124,141 @@ public class schermataPrincipale extends Application {
                 }
             });
         });
-        barraLaterale.getChildren().addAll(logoView, Inserisci, Aggiorna, Ricerca, Visualizza, Elimina,spacer, Esci);
 
-        return barraLaterale;
+        menuBar.getChildren().addAll(logoContainer, Inserisci, Aggiorna, Ricerca, Visualizza, Elimina, spacer, Esci);
+        return menuBar;
     }
 
-    private Button creaPulsante(String testo) {
-        Button button = new Button(testo);
-        button.setStyle("-fx-background-color: #1abc9c; " + "-fx-text-fill: white; " + "-fx-font-size: 14px; " + "-fx-font-weight: bold; " + "-fx-background-radius: 20; " + "-fx-padding: 10 20;");
-        button.setMaxWidth(Double.MAX_VALUE);
-        button.setStyle("-fx-background-radius: 20; -fx-font-size: 14px; -fx-text-fill: white;-fx-background-color: #16a085;");
+    private Button createMenuButton(String text) {
+        Button button = new Button(text);
+        button.setStyle(
+                "-fx-background-color: transparent;" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-padding: 8 15;" +
+                        "-fx-cursor: hand;"
+        );
+
+        button.setOnMouseEntered(e -> button.setStyle(
+                "-fx-background-color: rgba(255, 255, 255, 0.1);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-padding: 8 15;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-background-radius: 5;"
+        ));
+
+        button.setOnMouseExited(e -> button.setStyle(
+                "-fx-background-color: transparent;" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-padding: 8 15;" +
+                        "-fx-cursor: hand;"
+        ));
+
+        return button;
+    }
+
+    private VBox createDashboard() {
+        VBox dashboard = new VBox(20);
+        dashboard.setPadding(new Insets(30));
+        dashboard.setAlignment(Pos.CENTER);
+
+        // Welcome message
+        Label welcomeLabel = new Label("Benvenuto nel Sistema di Gestione E-commerce");
+        welcomeLabel.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: white; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
+
+        // Stats grid
+        GridPane statsGrid = new GridPane();
+        statsGrid.setHgap(20);
+        statsGrid.setVgap(20);
+        statsGrid.setAlignment(Pos.CENTER);
+
+        // Create stat cards
+        statsGrid.add(createStatCard("Prodotti Totali", String.valueOf(listaProdotti.size()), "#00b4db"), 0, 0);
+        statsGrid.add(createStatCard("Categorie", "5", "#0083b0"), 1, 0);
+        statsGrid.add(createStatCard("Taglie Disponibili", "6", "#00b4db"), 2, 0);
+
+        // Quick actions
+        VBox quickActions = new VBox(15);
+        quickActions.setAlignment(Pos.CENTER);
+        Label quickActionsLabel = new Label("Azioni Rapide");
+        quickActionsLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;");
+
+        HBox actionButtons = new HBox(20);
+        actionButtons.setAlignment(Pos.CENTER);
+
+        Button quickInsert = createDashboardButton("Inserisci Nuovo Prodotto");
+        Button quickSearch = createDashboardButton("Cerca Prodotti");
+        Button quickView = createDashboardButton("Visualizza Catalogo");
+
+        quickInsert.setOnAction(e -> root.setCenter(schermataInserisci()));
+        quickSearch.setOnAction(e -> root.setCenter(schermataRicerca()));
+        quickView.setOnAction(e -> root.setCenter(schermataVisualizza()));
+
+        actionButtons.getChildren().addAll(quickInsert, quickSearch, quickView);
+        quickActions.getChildren().addAll(quickActionsLabel, actionButtons);
+
+        dashboard.getChildren().addAll(welcomeLabel, statsGrid, quickActions);
+        return dashboard;
+    }
+
+    private VBox createStatCard(String title, String value, String color) {
+        VBox card = new VBox(10);
+        card.setPadding(new Insets(20));
+        card.setStyle(
+                "-fx-background-color: " + color + ";" +
+                        "-fx-background-radius: 15;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);"
+        );
+        card.setPrefWidth(200);
+        card.setPrefHeight(150);
+        card.setAlignment(Pos.CENTER);
+
+        Label titleLabel = new Label(title);
+        titleLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: white;");
+
+        Label valueLabel = new Label(value);
+        valueLabel.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: white;");
+
+        card.getChildren().addAll(titleLabel, valueLabel);
+        return card;
+    }
+
+    private Button createDashboardButton(String text) {
+        Button button = new Button(text);
+        button.setStyle(
+                "-fx-background-color: rgba(255, 255, 255, 0.1);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-padding: 15 30;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-cursor: hand;"
+        );
+
+        button.setOnMouseEntered(e -> button.setStyle(
+                "-fx-background-color: rgba(255, 255, 255, 0.2);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-padding: 15 30;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-cursor: hand;"
+        ));
+
+        button.setOnMouseExited(e -> button.setStyle(
+                "-fx-background-color: rgba(255, 255, 255, 0.1);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-padding: 15 30;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-cursor: hand;"
+        ));
 
         return button;
     }
@@ -121,7 +266,7 @@ public class schermataPrincipale extends Application {
     private Pane schermataInserisci() {
         VBox vbox = new VBox(15);
         vbox.setPadding(new Insets(20));
-        vbox.setStyle("-fx-background-color: #ecf0f1;");
+        vbox.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);");
 
         // Etichette e campi per ID e Nome sulla stessa riga
         Label nomeText = creaLabel("Nome prodotto:");
@@ -190,7 +335,7 @@ public class schermataPrincipale extends Application {
         // Taglie disponibili
         Label taglieLabel = creaLabel("Taglie disponibili:");
         ChoiceBox<String> tagliaText = new ChoiceBox<>();
-        tagliaText.getItems().addAll("XS", "S", "M", "L", "XL", "XXL");
+        tagliaText.getItems().addAll("XS", "S", "M", "L", "XL");
         tagliaText.setValue("Taglie disponibili");
         tagliaText.setPrefWidth(200);
 
@@ -304,14 +449,10 @@ public class schermataPrincipale extends Application {
         return vbox;
     }
 
-
-
-
-
     private Pane schermataAggiorna() {
         VBox vbox = new VBox(15);
         vbox.setPadding(new Insets(20));
-        vbox.setStyle("-fx-background-color: #ecf0f1;");
+        vbox.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);");
 
         Label idLabel = creaLabel("ID prodotto da aggiornare:");
         ChoiceBox<String> idChoiceBox = new ChoiceBox<>();
@@ -360,7 +501,7 @@ public class schermataPrincipale extends Application {
 
         Label taglieLabel = creaLabel("Taglie disponibili:");
         ChoiceBox<String> tagliaText = new ChoiceBox<>();
-        ObservableList<String> taglieDisponibili = FXCollections.observableArrayList("XS", "S", "M", "L", "XL", "XXL");
+        ObservableList<String> taglieDisponibili = FXCollections.observableArrayList("XS", "S", "M", "L", "XL");
         tagliaText.setItems(taglieDisponibili);
         tagliaText.setValue("Taglie disponibili");
 
@@ -487,13 +628,10 @@ public class schermataPrincipale extends Application {
         return vbox;
     }
 
-
-
-
     private Pane schermataRicerca() {
         VBox vbox = new VBox(15);
         vbox.setPadding(new Insets(20));
-        vbox.setStyle("-fx-background-color: #ecf0f1;");
+        vbox.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);");
 
         Label cercaLabel = creaLabel("Cerca prodotto per nome o ID:");
         TextField cercaText = creaTextField("Cerca prodotto");
@@ -501,56 +639,66 @@ public class schermataPrincipale extends Application {
 
         Button cerca = creaButton("Cerca");
 
-        Label risultatoLabel = new Label();
-        risultatoLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
-        listaProdotti= Server.getProdotti();
+        // Creiamo una TableView per mostrare i risultati
+        TableView<Prodotto> risultatiTable = new TableView<>();
+        risultatiTable.setPlaceholder(new Label("Nessun risultato trovato"));
+        risultatiTable.setMaxWidth(600);
+        risultatiTable.setMaxHeight(400);
+
+        // Colonna ID
+        TableColumn<Prodotto, String> colId = new TableColumn<>("ID");
+        colId.setPrefWidth(50);
+        colId.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getId()));
+
+        // Colonna Nome
+        TableColumn<Prodotto, String> colNome = new TableColumn<>("Nome");
+        colNome.setPrefWidth(150);
+        colNome.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNome()));
+
+        // Colonna Descrizione
+        TableColumn<Prodotto, String> colDescrizione = new TableColumn<>("Descrizione");
+        colDescrizione.setPrefWidth(200);
+        colDescrizione.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDescrizione()));
+
+        // Colonna Prezzo
+        TableColumn<Prodotto, String> colPrezzo = new TableColumn<>("Prezzo");
+        colPrezzo.setPrefWidth(100);
+        colPrezzo.setCellValueFactory(data -> new SimpleStringProperty(String.format("%.2f €", data.getValue().getPrezzo())));
+
+        // Colonna Taglie
+        TableColumn<Prodotto, String> colTaglie = new TableColumn<>("Taglie");
+        colTaglie.setPrefWidth(100);
+        colTaglie.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getTaglie()));
+
+        risultatiTable.getColumns().addAll(colId, colNome, colDescrizione, colPrezzo, colTaglie);
+
         cerca.setOnAction(e -> {
-            String input = cercaText.getText().trim();
-            Prodotto trovato = null;
+            String input = cercaText.getText().trim().toLowerCase();
+            risultatiTable.getItems().clear();
 
-            for (Prodotto prodotto : listaProdotti) {
-                if (prodotto.getId().equals(input) || prodotto.getNome().equalsIgnoreCase(input)) {
-                    trovato = prodotto;
-                    break;
-                }
+            if (input.isEmpty()) {
+                return;
             }
 
-            if (trovato != null) {
-                risultatoLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;-fx-text-fill: #2c3e50; -fx-background-color: #ecf0f1; -fx-padding: 10px; -fx-border-radius: 5px; -fx-border-color: #3498db;-fx-border-width: 2px; -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 5, 0, 2, 2);" );
-
-                risultatoLabel.setText("Prodotto trovato:\n\n" + "ID: " + trovato.getId() + "\n" + "Nome: " + trovato.getNome() + "\n" + "Descrizione: " + trovato.getDescrizione() + "\n" + "Prezzo: " + trovato.getPrezzo() + " €\n" + "Taglie: " + trovato.getTaglie());
-            } else {
-                risultatoLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: red;");
-                risultatoLabel.setText("Nessun prodotto trovato con ID o nome \"" + input + "\".");
+            for (Prodotto prodotto : listaProdotti) {
+                if (prodotto.getId().toLowerCase().contains(input) ||
+                        prodotto.getNome().toLowerCase().contains(input)) {
+                    risultatiTable.getItems().add(prodotto);
+                }
             }
         });
 
-        cercaText.setOnAction(e -> {
-            String input = cercaText.getText().trim();
-            Prodotto trovato = null;
+        cercaText.setOnAction(e -> cerca.fire());
 
-            for (Prodotto prodotto : listaProdotti) {
-                if (prodotto.getId().equals(input) || prodotto.getNome().equalsIgnoreCase(input)) {
-                    trovato = prodotto;
-                    break;
-                }
-            }
-
-            if (trovato != null) {
-                risultatoLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;-fx-text-fill: #2c3e50; -fx-background-color: #ecf0f1; -fx-padding: 10px; -fx-border-radius: 5px; -fx-border-color: #3498db;-fx-border-width: 2px; -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 5, 0, 2, 2);" );
-
-                risultatoLabel.setText("Prodotto trovato:\n\n" + "ID: " + trovato.getId() + "\n" + "Nome: " + trovato.getNome() + "\n" + "Descrizione: " + trovato.getDescrizione() + "\n" + "Prezzo: " + trovato.getPrezzo() + " €\n" + "Taglie: " + trovato.getTaglie());
-            } else {
-                risultatoLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: red;");
-                risultatoLabel.setText("Nessun prodotto trovato con ID o nome \"" + input + "\".");
-            }
-        });
-
-        vbox.getChildren().addAll(cercaLabel, cercaText, cerca, risultatoLabel);
+        vbox.getChildren().addAll(cercaLabel, cercaText, cerca, risultatiTable);
         return vbox;
     }
 
     private Pane schermataVisualizza() {
+        VBox vbox = new VBox(15);
+        vbox.setPadding(new Insets(20));
+        vbox.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);");
+
         String risposta = server.mostraTuttiProdotti();
 
         if (risposta == null || risposta.isEmpty()) {
@@ -558,7 +706,7 @@ public class schermataPrincipale extends Application {
             return new VBox(errore);
         }
 
-        VBox vbox = new VBox(15);
+        vbox = new VBox(15);
         vbox.setPadding(new Insets(20));
         vbox.setStyle("-fx-background-color: #ecf0f1;");
 
@@ -659,135 +807,197 @@ public class schermataPrincipale extends Application {
         return vbox;
     }
 
-
-
-
-
     private Pane schermataElimina() {
         VBox vbox = new VBox(15);
         vbox.setPadding(new Insets(20));
-        vbox.setStyle("-fx-background-color: #ecf0f1;");
+        vbox.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);");
 
         Label idText = creaLabel("Inserisci ID o nome del prodotto da eliminare:");
         TextField campoId = creaTextField("ID o Nome del prodotto");
         campoId.setMaxWidth(200);
         Button cercaButton = creaButton("Cerca");
-        Label risultatoLabel = new Label();
-        risultatoLabel.setWrapText(true);
-        risultatoLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #333333;");
 
-        Button eliminaButton = creaButton("Conferma eliminazione");
+        // TableView per mostrare i risultati della ricerca
+        TableView<Prodotto> risultatiTable = new TableView<>();
+        risultatiTable.setPlaceholder(new Label("Nessun risultato trovato"));
+        risultatiTable.setMaxWidth(600);
+        risultatiTable.setMaxHeight(300);
+
+        // Colonna ID
+        TableColumn<Prodotto, String> colId = new TableColumn<>("ID");
+        colId.setPrefWidth(50);
+        colId.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getId()));
+
+        // Colonna Nome
+        TableColumn<Prodotto, String> colNome = new TableColumn<>("Nome");
+        colNome.setPrefWidth(150);
+        colNome.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNome()));
+
+        // Colonna Descrizione
+        TableColumn<Prodotto, String> colDescrizione = new TableColumn<>("Descrizione");
+        colDescrizione.setPrefWidth(200);
+        colDescrizione.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDescrizione()));
+
+        // Colonna Prezzo
+        TableColumn<Prodotto, String> colPrezzo = new TableColumn<>("Prezzo");
+        colPrezzo.setPrefWidth(100);
+        colPrezzo.setCellValueFactory(data -> new SimpleStringProperty(String.format("%.2f €", data.getValue().getPrezzo())));
+
+        risultatiTable.getColumns().addAll(colId, colNome, colDescrizione, colPrezzo);
+
+        Button eliminaButton = creaButton("Elimina Selezionato");
         eliminaButton.setVisible(false);
 
-        Runnable cercaEEliminaProdotto = () -> {
-            String input = campoId.getText().trim();
-            risultatoLabel.setText("");
+        cercaButton.setOnAction(e -> {
+            String input = campoId.getText().trim().toLowerCase();
+            risultatiTable.getItems().clear();
             eliminaButton.setVisible(false);
 
             if (input.isEmpty()) {
-                risultatoLabel.setStyle("-fx-text-fill: red;");
-                risultatoLabel.setText("Inserisci un ID o nome valido.");
                 return;
             }
 
-            Prodotto trovato = listaProdotti.stream()
-                    .filter(p -> p.getId().equalsIgnoreCase(input) || p.getNome().equalsIgnoreCase(input))
-                    .findFirst().orElse(null);
-
-            if (trovato != null) {
-                risultatoLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #2c3e50; -fx-background-color: #ecf0f1; -fx-padding: 10px; -fx-border-radius: 5px; -fx-border-color: #3498db; -fx-border-width: 2px; -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 5, 0, 2, 2);");
-                risultatoLabel.setText("Prodotto trovato:\n\n" +
-                        "ID: " + trovato.getId() + "\n" +
-                        "Nome: " + trovato.getNome() + "\n" +
-                        "Descrizione: " + trovato.getDescrizione() + "\n" +
-                        "Prezzo: " + trovato.getPrezzo() + " €\n" +
-                        "Taglie: " + trovato.getTaglie());
-
-                eliminaButton.setVisible(true);
-
-                eliminaButton.setOnAction(ev -> {
-                    Stage stage = (Stage) eliminaButton.getScene().getWindow();
-
-                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                    alert.setTitle("Conferma eliminazione");
-                    alert.setHeaderText("Sei sicuro di voler eliminare il prodotto \"" + trovato.getNome() + "\"?");
-                    alert.setContentText("L'operazione non può essere annullata.");
-                    alert.initOwner(stage);
-
-                    Optional<ButtonType> result = alert.showAndWait();
-                    if (result.isPresent() && result.get() == ButtonType.OK) {
-                        try {
-                            int id = Integer.parseInt(trovato.getId());
-                            String rispostaServer = Server.eliminaProdotto(id);
-                            if (rispostaServer.toLowerCase().contains("successo")) {
-                                listaProdotti.remove(trovato);
-                                risultatoLabel.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
-                                risultatoLabel.setText("Prodotto eliminato con successo.");
-                            } else {
-                                risultatoLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
-                                risultatoLabel.setText("Errore durante l'eliminazione del prodotto: " + rispostaServer);
-                            }
-
-                        } catch (NumberFormatException ex) {
-                            risultatoLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
-                            risultatoLabel.setText("ID prodotto non valido.");
-                        }
-
-                        eliminaButton.setVisible(false);
-                    }
-                });
-
-            } else {
-                risultatoLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: red;");
-                risultatoLabel.setText("Nessun prodotto trovato con ID o nome \"" + input + "\".");
+            for (Prodotto prodotto : listaProdotti) {
+                if (prodotto.getId().toLowerCase().contains(input) ||
+                        prodotto.getNome().toLowerCase().contains(input)) {
+                    risultatiTable.getItems().add(prodotto);
+                }
             }
-        };
+        });
 
-        cercaButton.setOnAction(e -> cercaEEliminaProdotto.run());
-        campoId.setOnAction(e -> cercaEEliminaProdotto.run());
+        campoId.setOnAction(e -> cercaButton.fire());
 
-        vbox.getChildren().addAll(idText, campoId, cercaButton, risultatoLabel, eliminaButton);
+        risultatiTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            eliminaButton.setVisible(newSelection != null);
+        });
+
+        eliminaButton.setOnAction(e -> {
+            Prodotto selectedProduct = risultatiTable.getSelectionModel().getSelectedItem();
+            if (selectedProduct != null) {
+                Stage stage = (Stage) eliminaButton.getScene().getWindow();
+
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                alert.setTitle("Conferma eliminazione");
+                alert.setHeaderText("Sei sicuro di voler eliminare il prodotto \"" + selectedProduct.getNome() + "\"?");
+                alert.setContentText("L'operazione non può essere annullata.");
+                alert.initOwner(stage);
+
+                Optional<ButtonType> result = alert.showAndWait();
+                if (result.isPresent() && result.get() == ButtonType.OK) {
+                    try {
+                        int id = Integer.parseInt(selectedProduct.getId());
+                        String rispostaServer = Server.eliminaProdotto(id);
+                        if (rispostaServer.toLowerCase().contains("successo")) {
+                            listaProdotti.remove(selectedProduct);
+                            risultatiTable.getItems().remove(selectedProduct);
+
+                            Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+                            successAlert.setTitle("Successo");
+                            successAlert.setHeaderText(null);
+                            successAlert.setContentText("Prodotto eliminato con successo.");
+                            successAlert.showAndWait();
+                        } else {
+                            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+                            errorAlert.setTitle("Errore");
+                            errorAlert.setHeaderText(null);
+                            errorAlert.setContentText("Errore durante l'eliminazione del prodotto: " + rispostaServer);
+                            errorAlert.showAndWait();
+                        }
+                    } catch (NumberFormatException ex) {
+                        Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+                        errorAlert.setTitle("Errore");
+                        errorAlert.setHeaderText(null);
+                        errorAlert.setContentText("ID prodotto non valido.");
+                        errorAlert.showAndWait();
+                    }
+                }
+            }
+        });
+
+        vbox.getChildren().addAll(idText, campoId, cercaButton, risultatiTable, eliminaButton);
         return vbox;
     }
 
-
-
-
-
-
     private Label creaLabel(String testo) {
         Label label = new Label(testo);
-        label.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        label.setStyle(
+                "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-text-fill: #2c3e50;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 2, 0, 0, 1);"
+        );
         return label;
     }
 
     private TextField creaTextField(String promptText) {
         TextField textField = new TextField();
         textField.setPromptText(promptText);
-        textField.setStyle(" -fx-border-radius: 20; -fx-padding: 10;");
+        textField.setStyle(
+                "-fx-background-color: white;" +
+                        "-fx-text-fill: #2c3e50;" +
+                        "-fx-prompt-text-fill: #7f8c8d;" +
+                        "-fx-border-color: #00b4db;" +
+                        "-fx-border-radius: 20;" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-padding: 10 15;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 3, 0, 0, 1);"
+        );
         return textField;
     }
 
     private TextArea creaTextArea(String promptText) {
         TextArea textArea = new TextArea();
         textArea.setPromptText(promptText);
-        textArea.setStyle(" -fx-border-radius: 20;");
+        textArea.setStyle(
+                "-fx-background-color: white;" +
+                        "-fx-text-fill: #2c3e50;" +
+                        "-fx-prompt-text-fill: #7f8c8d;" +
+                        "-fx-border-color: #00b4db;" +
+                        "-fx-border-radius: 20;" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-padding: 10 15;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 3, 0, 0, 1);"
+        );
         return textArea;
     }
 
     private Button creaButton(String testo) {
         Button button = new Button(testo);
         button.setStyle(
-                "-fx-background-color: #1abc9c; " +
-                        "-fx-text-fill: white; " +
-                        "-fx-font-size: 14px; " +
-                        "-fx-background-radius: 20; " +
-                        "-fx-padding: 10 20;"
+                "-fx-background-color: linear-gradient(to right, #00b4db, #0083b0);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-padding: 12 25;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 2);"
         );
+
+        button.setOnMouseEntered(e -> button.setStyle(
+                "-fx-background-color: linear-gradient(to right, #0083b0, #00b4db);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-padding: 12 25;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 8, 0, 0, 3);"
+        ));
+
+        button.setOnMouseExited(e -> button.setStyle(
+                "-fx-background-color: linear-gradient(to right, #00b4db, #0083b0);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-padding: 12 25;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 2);"
+        ));
+
         return button;
     }
-
-
 
     public static void main(String[] args) {
         launch();

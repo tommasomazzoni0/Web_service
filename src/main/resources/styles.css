@@ -1,0 +1,111 @@
+.table-view {
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #00b4db;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 2);
+}
+
+.table-view .column-header {
+    -fx-background-color: linear-gradient(to right, #00b4db, #0083b0);
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.table-view .table-cell {
+    -fx-text-fill: #2c3e50;
+    -fx-border-color: rgba(0, 0, 0, 0.1);
+}
+
+.table-view .table-row-cell {
+    -fx-background-color: white;
+}
+
+.table-view .table-row-cell:odd {
+    -fx-background-color: #f8f9fa;
+}
+
+.table-view .table-row-cell:selected {
+    -fx-background-color: rgba(0, 180, 219, 0.2);
+}
+
+.choice-box {
+    -fx-background-color: white;
+    -fx-border-color: #00b4db;
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+    -fx-text-fill: #2c3e50;
+}
+
+.choice-box .label {
+    -fx-text-fill: #2c3e50;
+}
+
+.choice-box .context-menu {
+    -fx-background-color: white;
+    -fx-border-color: #00b4db;
+}
+
+.choice-box .menu-item {
+    -fx-background-color: white;
+}
+
+.choice-box .menu-item:hover {
+    -fx-background-color: rgba(0, 180, 219, 0.1);
+}
+
+.choice-box .menu-item .label {
+    -fx-text-fill: #2c3e50;
+}
+
+.scroll-bar {
+    -fx-background-color: #f8f9fa;
+    -fx-background-radius: 10;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #00b4db;
+    -fx-background-radius: 10;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #0083b0;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.alert {
+    -fx-background-color: white;
+    -fx-border-color: #00b4db;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}
+
+.alert .header-panel {
+    -fx-background-color: linear-gradient(to right, #00b4db, #0083b0);
+}
+
+.alert .content {
+    -fx-text-fill: #2c3e50;
+}
+
+.alert .button-bar .button {
+    -fx-background-color: linear-gradient(to right, #00b4db, #0083b0);
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 20;
+    -fx-padding: 8 20;
+}
+
+.alert .button-bar .button:hover {
+    -fx-background-color: linear-gradient(to right, #0083b0, #00b4db);
+} 
