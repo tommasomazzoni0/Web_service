@@ -179,8 +179,8 @@ public class schermataPrincipale extends Application {
 
         // Create stat cards
         statsGrid.add(createStatCard("Prodotti Totali", String.valueOf(listaProdotti.size()), "#00b4db"), 0, 0);
-        statsGrid.add(createStatCard("Categorie", "5", "#0083b0"), 1, 0);
-        statsGrid.add(createStatCard("Taglie Disponibili", "6", "#00b4db"), 2, 0);
+        statsGrid.add(createStatCard("funzionalità attive", "5", "#0083b0"), 1, 0);
+        statsGrid.add(createStatCard("Taglie Disponibili", "5", "#00b4db"), 2, 0);
 
         // Quick actions
         VBox quickActions = new VBox(15);
@@ -639,26 +639,52 @@ public class schermataPrincipale extends Application {
 
         Button cerca = creaButton("Cerca");
 
-        // Creiamo una TableView per mostrare i risultati
         TableView<Prodotto> risultatiTable = new TableView<>();
         risultatiTable.setPlaceholder(new Label("Nessun risultato trovato"));
-        risultatiTable.setMaxWidth(600);
+        risultatiTable.setMaxWidth(750);
         risultatiTable.setMaxHeight(400);
 
-        // Colonna ID
         TableColumn<Prodotto, String> colId = new TableColumn<>("ID");
         colId.setPrefWidth(50);
         colId.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getId()));
 
-        // Colonna Nome
         TableColumn<Prodotto, String> colNome = new TableColumn<>("Nome");
         colNome.setPrefWidth(150);
         colNome.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNome()));
+        colNome.setCellFactory(tc -> {
+            TableCell<Prodotto, String> cell = new TableCell<>() {
+                private final Text text = new Text();
+                {
+                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(10));
+                    setGraphic(text);
+                }
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    text.setText(empty || item == null ? "" : item);
+                }
+            };
+            return cell;
+        });
 
-        // Colonna Descrizione
         TableColumn<Prodotto, String> colDescrizione = new TableColumn<>("Descrizione");
-        colDescrizione.setPrefWidth(200);
+        colDescrizione.setPrefWidth(300);
         colDescrizione.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDescrizione()));
+        colDescrizione.setCellFactory(tc -> {
+            TableCell<Prodotto, String> cell = new TableCell<>() {
+                private final Text text = new Text();
+                {
+                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(10));
+                    setGraphic(text);
+                }
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    text.setText(empty || item == null ? "" : item);
+                }
+            };
+            return cell;
+        });
 
         // Colonna Prezzo
         TableColumn<Prodotto, String> colPrezzo = new TableColumn<>("Prezzo");
@@ -667,8 +693,23 @@ public class schermataPrincipale extends Application {
 
         // Colonna Taglie
         TableColumn<Prodotto, String> colTaglie = new TableColumn<>("Taglie");
-        colTaglie.setPrefWidth(100);
+        colTaglie.setPrefWidth(150);
         colTaglie.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getTaglie()));
+        colTaglie.setCellFactory(tc -> {
+            TableCell<Prodotto, String> cell = new TableCell<>() {
+                private final Text text = new Text();
+                {
+                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(10));
+                    setGraphic(text);
+                }
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    text.setText(empty || item == null ? "" : item.replaceAll(", ", "\n"));
+                }
+            };
+            return cell;
+        });
 
         risultatiTable.getColumns().addAll(colId, colNome, colDescrizione, colPrezzo, colTaglie);
 
@@ -817,28 +858,53 @@ public class schermataPrincipale extends Application {
         campoId.setMaxWidth(200);
         Button cercaButton = creaButton("Cerca");
 
-        // TableView per mostrare i risultati della ricerca
         TableView<Prodotto> risultatiTable = new TableView<>();
         risultatiTable.setPlaceholder(new Label("Nessun risultato trovato"));
-        risultatiTable.setMaxWidth(600);
+        risultatiTable.setMaxWidth(750);
         risultatiTable.setMaxHeight(300);
 
-        // Colonna ID
         TableColumn<Prodotto, String> colId = new TableColumn<>("ID");
         colId.setPrefWidth(50);
         colId.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getId()));
 
-        // Colonna Nome
         TableColumn<Prodotto, String> colNome = new TableColumn<>("Nome");
-        colNome.setPrefWidth(150);
+        colNome.setPrefWidth(200);
         colNome.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNome()));
+        colNome.setCellFactory(tc -> {
+            TableCell<Prodotto, String> cell = new TableCell<>() {
+                private final Text text = new Text();
+                {
+                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(10));
+                    setGraphic(text);
+                }
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    text.setText(empty || item == null ? "" : item);
+                }
+            };
+            return cell;
+        });
 
-        // Colonna Descrizione
         TableColumn<Prodotto, String> colDescrizione = new TableColumn<>("Descrizione");
-        colDescrizione.setPrefWidth(200);
+        colDescrizione.setPrefWidth(400);
         colDescrizione.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDescrizione()));
+        colDescrizione.setCellFactory(tc -> {
+            TableCell<Prodotto, String> cell = new TableCell<>() {
+                private final Text text = new Text();
+                {
+                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(10));
+                    setGraphic(text);
+                }
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    text.setText(empty || item == null ? "" : item);
+                }
+            };
+            return cell;
+        });
 
-        // Colonna Prezzo
         TableColumn<Prodotto, String> colPrezzo = new TableColumn<>("Prezzo");
         colPrezzo.setPrefWidth(100);
         colPrezzo.setCellValueFactory(data -> new SimpleStringProperty(String.format("%.2f €", data.getValue().getPrezzo())));
