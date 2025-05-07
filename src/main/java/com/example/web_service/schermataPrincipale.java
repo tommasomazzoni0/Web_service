@@ -11,21 +11,58 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.util.Duration;
 import javafx.util.Pair;
 import javafx.util.converter.IntegerStringConverter;
+import javafx.animation.ScaleTransition;
+import javafx.animation.FadeTransition;
 
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
+import javafx.scene.shape.Circle;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.effect.Glow;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.TableRow;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Button;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ScrollPane;
+
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.io.OutputStream;
+import java.net.URLEncoder;
+
 
 public class schermataPrincipale extends Application {
 
@@ -35,23 +72,358 @@ public class schermataPrincipale extends Application {
 
 
     Scene scene;
+    private Stage primaryStage;
+
     @Override
-
     public void start(Stage primaryStage) {
-        listaProdotti = server.getProdotti();
+        this.primaryStage = primaryStage;
+        showLoginScreen();
+    }
 
+    private void showLoginScreen() {
+        primaryStage.initStyle(StageStyle.TRANSPARENT);
+
+        // Blocca i tasti di chiusura
+        primaryStage.setOnCloseRequest(event -> {
+            event.consume();
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Conferma uscita");
+            alert.setHeaderText("Sei sicuro di voler uscire?");
+            alert.setContentText("Premi OK per uscire, oppure Annulla per rimanere nell'app.");
+            alert.initOwner(primaryStage);
+
+            ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancelButton = new ButtonType("Annulla", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+            alert.getButtonTypes().setAll(okButton, cancelButton);
+
+            alert.showAndWait().ifPresent(response -> {
+                if (response == okButton) {
+                    Platform.exit();
+                }
+            });
+        });
+
+        // Blocca Alt+F4 e altri tasti di sistema
+        primaryStage.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.F4 && event.isAltDown()) {
+                event.consume();
+            }
+        });
+
+        VBox loginBox = new VBox(20);
+        loginBox.setAlignment(Pos.CENTER);
+        loginBox.setStyle("-fx-background-color: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);");
+        loginBox.setPadding(new Insets(50));
+
+        Button closeButton = new Button("×");
+        closeButton.setStyle(
+                "-fx-background-color: rgba(255, 255, 255, 0.15);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 24px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-background-radius: 50;" +
+                        "-fx-min-width: 40px;" +
+                        "-fx-min-height: 40px;" +
+                        "-fx-padding: 0;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 0);"
+        );
+        closeButton.setOnAction(e -> {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Conferma uscita");
+            alert.setHeaderText("Sei sicuro di voler uscire?");
+            alert.setContentText("Premi OK per uscire, oppure Annulla per rimanere nell'app.");
+            alert.initOwner(primaryStage);
+
+            ButtonType okButton = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancelButton = new ButtonType("Annulla", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+            alert.getButtonTypes().setAll(okButton, cancelButton);
+
+            alert.showAndWait().ifPresent(response -> {
+                if (response == okButton) {
+                    Platform.exit();
+                }
+            });
+        });
+        closeButton.setOnMouseEntered(e -> closeButton.setStyle(
+                "-fx-background-color: #ff4444;" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 24px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-background-radius: 50;" +
+                        "-fx-min-width: 40px;" +
+                        "-fx-min-height: 40px;" +
+                        "-fx-padding: 0;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 8, 0, 0, 0);"
+        ));
+        closeButton.setOnMouseExited(e -> closeButton.setStyle(
+                "-fx-background-color: rgba(255, 255, 255, 0.15);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 24px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-background-radius: 50;" +
+                        "-fx-min-width: 40px;" +
+                        "-fx-min-height: 40px;" +
+                        "-fx-padding: 0;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 0);"
+        ));
+
+        HBox topBar = new HBox();
+        topBar.setAlignment(Pos.TOP_RIGHT);
+        topBar.setPadding(new Insets(15));
+        topBar.getChildren().add(closeButton);
+
+        VBox contentBox = new VBox(30);
+        contentBox.setAlignment(Pos.CENTER);
+        contentBox.setMaxWidth(500);
+        contentBox.setTranslateY(-100);
+
+        Image logo = new Image(getClass().getResourceAsStream("/images/logo.png"));
+        ImageView logoView = new ImageView(logo);
+        logoView.setFitHeight(120);
+        logoView.setPreserveRatio(true);
+        logoView.setEffect(new Glow(0.8));
+
+        ScaleTransition st = new ScaleTransition(Duration.seconds(2), logoView);
+        st.setFromX(0.8);
+        st.setFromY(0.8);
+        st.setToX(1.0);
+        st.setToY(1.0);
+        st.setCycleCount(ScaleTransition.INDEFINITE);
+        st.setAutoReverse(true);
+        st.play();
+
+        Label titleLabel = new Label("E-commerce Dashboard");
+        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 32));
+        titleLabel.setStyle("-fx-text-fill: white;");
+        titleLabel.setEffect(new DropShadow(20, Color.BLACK));
+
+        VBox formBox = new VBox(20);
+        formBox.setStyle(
+                "-fx-background-color: rgba(255, 255, 255, 0.95);" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-padding: 40;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 20, 0, 0, 0);"
+        );
+        formBox.setMaxWidth(400);
+
+        Label welcomeLabel = new Label("Benvenuto");
+        welcomeLabel.setFont(Font.font("System", FontWeight.BOLD, 28));
+        welcomeLabel.setStyle("-fx-text-fill: #2c3e50;");
+
+        Label usernameLabel = new Label("Username");
+        usernameLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
+        usernameLabel.setStyle("-fx-text-fill: #2c3e50;");
+        TextField usernameField = new TextField();
+        usernameField.setStyle(
+                "-fx-background-color: white;" +
+                        "-fx-border-color: #00b4db;" +
+                        "-fx-border-radius: 10;" +
+                        "-fx-padding: 12;" +
+                        "-fx-font-size: 14px;"
+        );
+        usernameField.setPromptText("Inserisci il tuo username");
+
+        Label passwordLabel = new Label("Password");
+        passwordLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
+        passwordLabel.setStyle("-fx-text-fill: #2c3e50;");
+        PasswordField passwordField = new PasswordField();
+        passwordField.setStyle(
+                "-fx-background-color: white;" +
+                        "-fx-border-color: #00b4db;" +
+                        "-fx-border-radius: 10;" +
+                        "-fx-padding: 12;" +
+                        "-fx-font-size: 14px;"
+        );
+        passwordField.setPromptText("Inserisci la tua password");
+
+        CheckBox showPassword = new CheckBox("Mostra password");
+        showPassword.setStyle("-fx-text-fill: #2c3e50; -fx-font-size: 14px;");
+        TextField passwordVisible = new TextField();
+        passwordVisible.setStyle(passwordField.getStyle());
+        passwordVisible.setVisible(false);
+        passwordVisible.setManaged(false);
+
+        showPassword.setOnAction(e -> {
+            if (showPassword.isSelected()) {
+                passwordVisible.setText(passwordField.getText());
+                passwordVisible.setVisible(true);
+                passwordVisible.setManaged(true);
+                passwordField.setVisible(false);
+                passwordField.setManaged(false);
+            } else {
+                passwordField.setText(passwordVisible.getText());
+                passwordField.setVisible(true);
+                passwordField.setManaged(true);
+                passwordVisible.setVisible(false);
+                passwordVisible.setManaged(false);
+            }
+        });
+
+        Label errorLabel = new Label();
+        errorLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 14px;");
+        errorLabel.setWrapText(true);
+
+        Button loginButton = new Button("Accedi");
+        loginButton.setStyle(
+                "-fx-background-color: linear-gradient(to right, #00b4db, #0083b0);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 16px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-padding: 15 30;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 2);"
+        );
+
+        loginButton.setOnMouseEntered(e -> loginButton.setStyle(
+                "-fx-background-color: linear-gradient(to right, #0083b0, #00b4db);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 16px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-padding: 15 30;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 8, 0, 0, 3);"
+        ));
+
+        loginButton.setOnMouseExited(e -> loginButton.setStyle(
+                "-fx-background-color: linear-gradient(to right, #00b4db, #0083b0);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 16px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-padding: 15 30;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 2);"
+        ));
+
+        ProgressIndicator loadingIndicator = new ProgressIndicator();
+        loadingIndicator.setVisible(false);
+        loadingIndicator.setMaxSize(20, 20);
+
+        Runnable loginAction = () -> {
+            String username = usernameField.getText();
+            String password = showPassword.isSelected() ? passwordVisible.getText() : passwordField.getText();
+
+            if (username.isEmpty() || password.isEmpty()) {
+                errorLabel.setText("Inserisci username e password");
+                return;
+            }
+
+            loginButton.setDisable(true);
+            loadingIndicator.setVisible(true);
+            errorLabel.setText("");
+
+            try {
+                String response = authenticateUser(username, password);
+
+                if (response.contains("Login effettuato con successo")) {
+                    FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.5), loginBox);
+                    fadeOut.setFromValue(1.0);
+                    fadeOut.setToValue(0.0);
+                    fadeOut.setOnFinished(e -> {
+        listaProdotti = server.getProdotti();
+                        showMainScreen();
+                    });
+                    fadeOut.play();
+                } else {
+                    errorLabel.setText("Credenziali non valide");
+                    loginButton.setDisable(false);
+                    loadingIndicator.setVisible(false);
+                }
+            } catch (Exception ex) {
+                errorLabel.setText("Errore di connessione al server");
+                loginButton.setDisable(false);
+                loadingIndicator.setVisible(false);
+            }
+        };
+
+        loginButton.setOnAction(e -> loginAction.run());
+        passwordField.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ENTER) {
+                loginAction.run();
+            }
+        });
+        passwordVisible.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ENTER) {
+                loginAction.run();
+            }
+        });
+
+        HBox buttonBox = new HBox(10, loginButton, loadingIndicator);
+        buttonBox.setAlignment(Pos.CENTER);
+
+        formBox.getChildren().addAll(
+                welcomeLabel,
+                usernameLabel,
+                usernameField,
+                passwordLabel,
+                passwordField,
+                passwordVisible,
+                showPassword,
+                errorLabel,
+                buttonBox
+        );
+
+        contentBox.getChildren().addAll(logoView, titleLabel, formBox);
+        loginBox.getChildren().addAll(topBar, contentBox);
+
+        Scene loginScene = new Scene(loginBox);
+        loginScene.setFill(Color.TRANSPARENT);
+        primaryStage.setTitle("Login - E-commerce Dashboard");
+        primaryStage.setScene(loginScene);
+
+        primaryStage.setMaximized(true);
+        primaryStage.setFullScreen(true);
+        primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
+        primaryStage.show();
+    }
+
+    private String authenticateUser(String username, String password) {
+        try {
+            URL url = new URL("https://lucacassina.altervista.org/ecommerce/login.php");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+
+            String postData = "username=" + URLEncoder.encode(username, "UTF-8") +
+                    "&password=" + URLEncoder.encode(password, "UTF-8");
+
+            try (OutputStream os = connection.getOutputStream()) {
+                byte[] input = postData.getBytes("UTF-8");
+                os.write(input, 0, input.length);
+            }
+
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"))) {
+                StringBuilder response = new StringBuilder();
+                String responseLine;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
+                return response.toString();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Errore di connessione";
+        }
+    }
+
+    private void showMainScreen() {
         root = new BorderPane();
         root.setStyle("-fx-background-color: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);");
 
-        // Create top menu bar
         HBox topMenu = createTopMenu();
         root.setTop(topMenu);
 
-        // Create initial dashboard
         VBox dashboard = createDashboard();
         root.setCenter(dashboard);
 
-        scene = new Scene(root, 1200, 800);
+        scene = new Scene(root);
         scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
         primaryStage.setTitle("E-commerce Dashboard");
         primaryStage.setScene(scene);
@@ -68,7 +440,6 @@ public class schermataPrincipale extends Application {
         menuBar.setStyle("-fx-background-color: rgba(0, 0, 0, 0.2); -fx-background-radius: 0 0 20 20;");
         menuBar.setAlignment(Pos.CENTER);
 
-        // Create clickable logo and title container
         HBox logoContainer = new HBox(10);
         logoContainer.setAlignment(Pos.CENTER_LEFT);
         logoContainer.setStyle("-fx-cursor: hand;");
@@ -85,7 +456,6 @@ public class schermataPrincipale extends Application {
 
         logoContainer.getChildren().addAll(logoView, titleLabel);
 
-        // Add click event to return to dashboard
         logoContainer.setOnMouseClicked(e -> root.setCenter(createDashboard()));
         logoView.setOnMouseClicked(e -> root.setCenter(createDashboard()));
         titleLabel.setOnMouseClicked(e -> root.setCenter(createDashboard()));
@@ -95,6 +465,7 @@ public class schermataPrincipale extends Application {
         Button Ricerca = createMenuButton("Cerca Prodotto");
         Button Visualizza = createMenuButton("Visualizza Tutti");
         Button Elimina = createMenuButton("Elimina Prodotto");
+        Button Utenti = createMenuButton("Visualizza Utenti");
         Button Esci = createMenuButton("Esci");
 
         Region spacer = new Region();
@@ -105,6 +476,7 @@ public class schermataPrincipale extends Application {
         Ricerca.setOnAction(e -> root.setCenter(schermataRicerca()));
         Visualizza.setOnAction(e -> root.setCenter(schermataVisualizza()));
         Elimina.setOnAction(e -> root.setCenter(schermataElimina()));
+        Utenti.setOnAction(e -> root.setCenter(schermataUtenti()));
 
         Esci.setOnAction(e -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -125,7 +497,7 @@ public class schermataPrincipale extends Application {
             });
         });
 
-        menuBar.getChildren().addAll(logoContainer, Inserisci, Aggiorna, Ricerca, Visualizza, Elimina, spacer, Esci);
+        menuBar.getChildren().addAll(logoContainer, Inserisci, Aggiorna, Ricerca, Visualizza, Elimina, Utenti, spacer, Esci);
         return menuBar;
     }
 
@@ -167,22 +539,18 @@ public class schermataPrincipale extends Application {
         dashboard.setPadding(new Insets(30));
         dashboard.setAlignment(Pos.CENTER);
 
-        // Welcome message
         Label welcomeLabel = new Label("Benvenuto nel Sistema di Gestione E-commerce");
         welcomeLabel.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: white; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 0);");
 
-        // Stats grid
         GridPane statsGrid = new GridPane();
         statsGrid.setHgap(20);
         statsGrid.setVgap(20);
         statsGrid.setAlignment(Pos.CENTER);
 
-        // Create stat cards
         statsGrid.add(createStatCard("Prodotti Totali", String.valueOf(listaProdotti.size()), "#00b4db"), 0, 0);
-        statsGrid.add(createStatCard("funzionalità attive", "5", "#0083b0"), 1, 0);
+        statsGrid.add(createStatCard("Funzionalità Attive", "8", "#0083b0"), 1, 0);
         statsGrid.add(createStatCard("Taglie Disponibili", "5", "#00b4db"), 2, 0);
 
-        // Quick actions
         VBox quickActions = new VBox(15);
         quickActions.setAlignment(Pos.CENTER);
         Label quickActionsLabel = new Label("Azioni Rapide");
@@ -192,14 +560,14 @@ public class schermataPrincipale extends Application {
         actionButtons.setAlignment(Pos.CENTER);
 
         Button quickInsert = createDashboardButton("Inserisci Nuovo Prodotto");
-        Button quickSearch = createDashboardButton("Cerca Prodotti");
         Button quickView = createDashboardButton("Visualizza Catalogo");
+        Button quickUsers = createDashboardButton("Visualizza Utenti");
 
         quickInsert.setOnAction(e -> root.setCenter(schermataInserisci()));
-        quickSearch.setOnAction(e -> root.setCenter(schermataRicerca()));
         quickView.setOnAction(e -> root.setCenter(schermataVisualizza()));
+        quickUsers.setOnAction(e -> root.setCenter(schermataUtenti()));
 
-        actionButtons.getChildren().addAll(quickInsert, quickSearch, quickView);
+        actionButtons.getChildren().addAll(quickInsert, quickView, quickUsers);
         quickActions.getChildren().addAll(quickActionsLabel, actionButtons);
 
         dashboard.getChildren().addAll(welcomeLabel, statsGrid, quickActions);
@@ -268,7 +636,6 @@ public class schermataPrincipale extends Application {
         vbox.setPadding(new Insets(20));
         vbox.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);");
 
-        // Etichette e campi per ID e Nome sulla stessa riga
         Label nomeText = creaLabel("Nome prodotto:");
         TextField nome = creaTextField("Inserisci nome prodotto");
 
@@ -279,11 +646,9 @@ public class schermataPrincipale extends Application {
         nomeText.setPrefWidth(120);
         nome.setPrefWidth(200);
 
-        // Descrizione prodotto
         Label descrizioneText = creaLabel("Descrizione:");
         TextArea descrizione = creaTextArea("Descrizione del prodotto");
 
-        // Prezzo
         Label prezzoText = new Label("Prezzo:");
         prezzoText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #333333;");
         TextField prezzo = new TextField();
@@ -332,7 +697,6 @@ public class schermataPrincipale extends Application {
             }
         });
 
-        // Taglie disponibili
         Label taglieLabel = creaLabel("Taglie disponibili:");
         ChoiceBox<String> tagliaText = new ChoiceBox<>();
         tagliaText.getItems().addAll("XS", "S", "M", "L", "XL");
@@ -395,7 +759,7 @@ public class schermataPrincipale extends Application {
             if (quantitaStr.matches("[0-9]+")) {
                 int quantitaPerTaglia = Integer.parseInt(quantitaStr);
                 tabellaTaglie.getItems().add(new Pair<>(taglia, quantitaPerTaglia));
-                tagliaText.getItems().remove(taglia);  // Rimuove la taglia aggiunta
+                tagliaText.getItems().remove(taglia);
                 tagliaText.setValue("Taglie disponibili");
                 campoQuantitaTaglia.clear();
             } else {
@@ -403,7 +767,6 @@ public class schermataPrincipale extends Application {
             }
         });
 
-        // Gestione rimozione di una taglia dalla tabella
         tabellaTaglie.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 Pair<String, Integer> selectedItem = tabellaTaglie.getSelectionModel().getSelectedItem();
@@ -418,7 +781,6 @@ public class schermataPrincipale extends Application {
         hboxTaglie.setAlignment(Pos.CENTER_LEFT);
         Button inserisci = creaButton("Inserisci");
 
-        // Gestione dell'azione del pulsante "Inserisci"
         inserisci.setOnAction(e -> {
             String nomeProdotto = nome.getText().trim();
             String descrizioneProdotto = descrizione.getText().trim();
@@ -427,13 +789,11 @@ public class schermataPrincipale extends Application {
                     .map(pair -> pair.getKey() + ": " + pair.getValue())
                     .collect(Collectors.joining(", "));
 
-            // Controllo che i campi obbligatori non siano vuoti
             if (nomeProdotto.isEmpty() || descrizioneProdotto.isEmpty() || prezzoProdotto.isEmpty() || tabellaTaglie.getItems().isEmpty()) {
                 erroreLabel.setText("Tutti i campi obbligatori devono essere compilati.");
                 return;
             }
 
-            // Chiamata alla funzione inserisciProdotto
             String risposta = server.inserisciProdotto(nomeProdotto, descrizioneProdotto, prezzoProdotto, taglieProdotto);
             if (risposta.equals("Prodotto inserito con successo.")) {
                 successoLabel.setText("Prodotto inserito con successo!");
@@ -443,7 +803,6 @@ public class schermataPrincipale extends Application {
             }
         });
 
-        // Aggiungi la label di successo sopra il pulsante "Inserisci"
         vbox.getChildren().addAll(hboxIdNome, descrizioneText, descrizione, hboxPrezzo, taglieLabel, hboxTaglie, erroreLabel, tableContainer, caricaFotoButton, fotoCaricataLabel, successoLabel, inserisci);
 
         return vbox;
@@ -531,10 +890,9 @@ public class schermataPrincipale extends Application {
         Label erroreLabel = creaLabel("");
         erroreLabel.setStyle("-fx-text-fill: red; -fx-font-size: 14px;");
 
-        // Aggiungi l'etichetta di successo
         Label successoLabel = creaLabel("");
         successoLabel.setStyle("-fx-text-fill: green; -fx-font-size: 14px;");
-        successoLabel.setVisible(false);  // La stringa di successo è inizialmente invisibile
+        successoLabel.setVisible(false);
 
         aggiungiTaglia.setOnAction(e -> {
             String taglia = tagliaText.getValue();
@@ -584,12 +942,11 @@ public class schermataPrincipale extends Application {
             if (taglieString.length() > 0)
                 taglieString.setLength(taglieString.length() - 1);
 
-            // Chiamata al metodo per aggiornare il prodotto
             server.aggiornaProdotto(id, nomeVal, descrizioneVal, Float.parseFloat(prezzoVal), taglieString.toString());
 
             // Mostra la stringa di successo
             successoLabel.setText("Prodotto aggiornato con successo!");
-            successoLabel.setVisible(true);  // Rendi visibile il messaggio di successo
+            successoLabel.setVisible(true);
         });
 
         ArrayList<Prodotto> prodotti = server.getProdotti();
@@ -629,333 +986,232 @@ public class schermataPrincipale extends Application {
     }
 
     private Pane schermataRicerca() {
-        VBox vbox = new VBox(15);
+        VBox vbox = new VBox(20);
         vbox.setPadding(new Insets(20));
         vbox.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);");
 
-        Label cercaLabel = creaLabel("Cerca prodotto per nome o ID:");
-        TextField cercaText = creaTextField("Cerca prodotto");
-        cercaText.setMaxWidth(200);
+        Label titleLabel = new Label("Ricerca Prodotti");
+        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 24));
+        titleLabel.setStyle("-fx-text-fill: #2c3e50;");
 
-        Button cerca = creaButton("Cerca");
+        HBox searchBox = new HBox(10);
+        searchBox.setAlignment(Pos.CENTER);
+        searchBox.setPadding(new Insets(10));
 
-        TableView<Prodotto> risultatiTable = new TableView<>();
-        risultatiTable.setPlaceholder(new Label("Nessun risultato trovato"));
-        risultatiTable.setMaxWidth(750);
-        risultatiTable.setMaxHeight(400);
+        TextField searchField = new TextField();
+        searchField.setPromptText("Cerca per nome o ID prodotto...");
+        searchField.setStyle(
+            "-fx-background-color: white;" +
+            "-fx-text-fill: #2c3e50;" +
+            "-fx-prompt-text-fill: #7f8c8d;" +
+            "-fx-border-color: #00b4db;" +
+            "-fx-border-radius: 20;" +
+            "-fx-background-radius: 20;" +
+            "-fx-padding: 10 15;" +
+            "-fx-min-width: 300;"
+        );
 
-        TableColumn<Prodotto, String> colId = new TableColumn<>("ID");
-        colId.setPrefWidth(50);
-        colId.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getId()));
+        Button searchButton = new Button("Cerca");
+        searchButton.setStyle(
+            "-fx-background-color: linear-gradient(to right, #00b4db, #0083b0);" +
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 14px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 20;" +
+            "-fx-padding: 10 20;" +
+            "-fx-cursor: hand;"
+        );
 
-        TableColumn<Prodotto, String> colNome = new TableColumn<>("Nome");
-        colNome.setPrefWidth(150);
-        colNome.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNome()));
-        colNome.setCellFactory(tc -> {
-            TableCell<Prodotto, String> cell = new TableCell<>() {
-                private final Text text = new Text();
-                {
-                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(10));
-                    setGraphic(text);
-                }
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    text.setText(empty || item == null ? "" : item);
-                }
-            };
-            return cell;
-        });
+        searchBox.getChildren().addAll(searchField, searchButton);
 
-        TableColumn<Prodotto, String> colDescrizione = new TableColumn<>("Descrizione");
-        colDescrizione.setPrefWidth(300);
-        colDescrizione.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDescrizione()));
-        colDescrizione.setCellFactory(tc -> {
-            TableCell<Prodotto, String> cell = new TableCell<>() {
-                private final Text text = new Text();
-                {
-                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(10));
-                    setGraphic(text);
-                }
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    text.setText(empty || item == null ? "" : item);
-                }
-            };
-            return cell;
-        });
+        // Container per le card dei prodotti
+        FlowPane productCardsContainer = new FlowPane();
+        productCardsContainer.setHgap(20);
+        productCardsContainer.setVgap(20);
+        productCardsContainer.setPadding(new Insets(20));
+        productCardsContainer.setAlignment(Pos.CENTER);
 
-        // Colonna Prezzo
-        TableColumn<Prodotto, String> colPrezzo = new TableColumn<>("Prezzo");
-        colPrezzo.setPrefWidth(100);
-        colPrezzo.setCellValueFactory(data -> new SimpleStringProperty(String.format("%.2f €", data.getValue().getPrezzo())));
+        // ScrollPane per contenere le card
+        ScrollPane scrollPane = new ScrollPane(productCardsContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-        // Colonna Taglie
-        TableColumn<Prodotto, String> colTaglie = new TableColumn<>("Taglie");
-        colTaglie.setPrefWidth(150);
-        colTaglie.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getTaglie()));
-        colTaglie.setCellFactory(tc -> {
-            TableCell<Prodotto, String> cell = new TableCell<>() {
-                private final Text text = new Text();
-                {
-                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(10));
-                    setGraphic(text);
-                }
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    text.setText(empty || item == null ? "" : item.replaceAll(", ", "\n"));
-                }
-            };
-            return cell;
-        });
-
-        risultatiTable.getColumns().addAll(colId, colNome, colDescrizione, colPrezzo, colTaglie);
-
-        cerca.setOnAction(e -> {
-            String input = cercaText.getText().trim().toLowerCase();
-            risultatiTable.getItems().clear();
-
-            if (input.isEmpty()) {
-                return;
-            }
+        // Funzione per caricare i prodotti
+        Runnable loadProducts = () -> {
+            productCardsContainer.getChildren().clear();
+            String searchText = searchField.getText().trim().toLowerCase();
 
             for (Prodotto prodotto : listaProdotti) {
-                if (prodotto.getId().toLowerCase().contains(input) ||
-                        prodotto.getNome().toLowerCase().contains(input)) {
-                    risultatiTable.getItems().add(prodotto);
+                if (searchText.isEmpty() || 
+                    prodotto.getNome().toLowerCase().contains(searchText) ||
+                    prodotto.getId().toLowerCase().contains(searchText)) {
+                    productCardsContainer.getChildren().add(createProductCard(prodotto));
                 }
             }
-        });
+        };
 
-        cercaText.setOnAction(e -> cerca.fire());
+        // Carica i prodotti all'avvio
+        loadProducts.run();
 
-        vbox.getChildren().addAll(cercaLabel, cercaText, cerca, risultatiTable);
+        // Gestione ricerca
+        searchButton.setOnAction(e -> loadProducts.run());
+        searchField.setOnAction(e -> loadProducts.run());
+
+        vbox.getChildren().addAll(titleLabel, searchBox, scrollPane);
         return vbox;
     }
 
     private Pane schermataVisualizza() {
-        VBox vbox = new VBox(15);
+        VBox vbox = new VBox(20);
         vbox.setPadding(new Insets(20));
         vbox.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);");
 
-        String risposta = server.mostraTuttiProdotti();
+        // Titolo
+        Label titleLabel = new Label("Catalogo Prodotti");
+        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 24));
+        titleLabel.setStyle("-fx-text-fill: #2c3e50;");
 
-        if (risposta == null || risposta.isEmpty()) {
-            Label errore = new Label("Errore nel recupero dei prodotti.");
-            return new VBox(errore);
+        // Container per le card dei prodotti
+        FlowPane productCardsContainer = new FlowPane();
+        productCardsContainer.setHgap(20);
+        productCardsContainer.setVgap(20);
+        productCardsContainer.setPadding(new Insets(20));
+        productCardsContainer.setAlignment(Pos.CENTER);
+
+        // ScrollPane per contenere le card
+        ScrollPane scrollPane = new ScrollPane(productCardsContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+        // Carica tutti i prodotti
+        for (Prodotto prodotto : listaProdotti) {
+            productCardsContainer.getChildren().add(createProductCard(prodotto));
         }
 
-        vbox = new VBox(15);
-        vbox.setPadding(new Insets(20));
-        vbox.setStyle("-fx-background-color: #ecf0f1;");
-
-        Label prodottiDisponibili = creaLabel("Prodotti disponibili:");
-
-        TableView<Prodotto> table = new TableView<>();
-        table.setPlaceholder(new Label("Nessun prodotto disponibile"));
-        table.setMaxWidth(650);
-        VBox.setVgrow(table, Priority.ALWAYS);
-
-        // Colonna ID
-        TableColumn<Prodotto, String> colId = new TableColumn<>("ID");
-        colId.setPrefWidth(50);
-        colId.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getId()));
-
-        // Colonna Nome
-        TableColumn<Prodotto, String> colNome = new TableColumn<>("Nome");
-        colNome.setPrefWidth(100);
-        colNome.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNome()));
-
-        // Colonna Descrizione
-        TableColumn<Prodotto, String> colDescrizione = new TableColumn<>("Descrizione");
-        colDescrizione.setPrefWidth(200);
-        colDescrizione.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDescrizione()));
-        colDescrizione.setCellFactory(tc -> {
-            TableCell<Prodotto, String> cell = new TableCell<>() {
-                private final Text text = new Text();
-                {
-                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(10));
-                    setGraphic(text);
-                }
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    text.setText(empty || item == null ? "" : item);
-                }
-            };
-            return cell;
-        });
-
-        // Colonna Prezzo
-        TableColumn<Prodotto, String> colPrezzo = new TableColumn<>("Prezzo");
-        colPrezzo.setPrefWidth(100);
-        colPrezzo.setCellValueFactory(data -> new SimpleStringProperty(String.format("%.2f €", data.getValue().getPrezzo())));
-
-        // Colonna Foto
-        TableColumn<Prodotto, String> colFoto = new TableColumn<>("Foto");
-        colFoto.setPrefWidth(50);
-        colFoto.setCellValueFactory(data -> {
-            String path = data.getValue().getFoto();
-            return new SimpleStringProperty((path != null && !path.isBlank()) ? "Sì" : "No");
-        });
-
-        // Colonna Taglie
-        TableColumn<Prodotto, String> colTaglie = new TableColumn<>("Taglie");
-        colTaglie.setPrefWidth(150);
-        colTaglie.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getTaglie()));
-        colTaglie.setCellFactory(tc -> {
-            TableCell<Prodotto, String> cell = new TableCell<>() {
-                private final Text text = new Text();
-                {
-                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(10));
-                    setGraphic(text);
-                }
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    text.setText(empty || item == null ? "" : item.replaceAll(", ", "\n"));
-                }
-            };
-            return cell;
-        });
-
-        table.getColumns().addAll(colId, colNome, colDescrizione, colPrezzo, colFoto, colTaglie);
-
-        // Elabora la risposta del PHP
-        String[] prodottiArray = risposta.split(" \\| ");
-
-
-        for (String prodottoStr : prodottiArray) {
-            String[] datiProdotto = prodottoStr.split("_");
-
-
-            if (datiProdotto.length == 5) {
-
-                String id = datiProdotto[0];
-                String nome = datiProdotto[1];
-                String descrizione = datiProdotto[2];
-                float prezzo = Float.parseFloat(datiProdotto[3]);
-                String taglie = datiProdotto[4];
-
-                Prodotto prodotto = new Prodotto(id, nome, descrizione, prezzo, "si", taglie);
-                table.getItems().add(prodotto);
-            }
-        }
-
-        vbox.getChildren().addAll(prodottiDisponibili, table);
+        vbox.getChildren().addAll(titleLabel, scrollPane);
         return vbox;
     }
 
     private Pane schermataElimina() {
-        VBox vbox = new VBox(15);
+        VBox vbox = new VBox(20);
         vbox.setPadding(new Insets(20));
         vbox.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);");
 
-        Label idText = creaLabel("Inserisci ID o nome del prodotto da eliminare:");
-        TextField campoId = creaTextField("ID o Nome del prodotto");
-        campoId.setMaxWidth(200);
-        Button cercaButton = creaButton("Cerca");
+        // Titolo
+        Label titleLabel = new Label("Elimina Prodotto");
+        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 24));
+        titleLabel.setStyle("-fx-text-fill: #2c3e50;");
 
-        TableView<Prodotto> risultatiTable = new TableView<>();
-        risultatiTable.setPlaceholder(new Label("Nessun risultato trovato"));
-        risultatiTable.setMaxWidth(750);
-        risultatiTable.setMaxHeight(300);
+        // Barra di ricerca
+        HBox searchBox = new HBox(10);
+        searchBox.setAlignment(Pos.CENTER);
+        searchBox.setPadding(new Insets(10));
 
-        TableColumn<Prodotto, String> colId = new TableColumn<>("ID");
-        colId.setPrefWidth(50);
-        colId.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getId()));
+        TextField searchField = new TextField();
+        searchField.setPromptText("Cerca per nome o ID prodotto...");
+        searchField.setStyle(
+            "-fx-background-color: white;" +
+            "-fx-text-fill: #2c3e50;" +
+            "-fx-prompt-text-fill: #7f8c8d;" +
+            "-fx-border-color: #00b4db;" +
+            "-fx-border-radius: 20;" +
+            "-fx-background-radius: 20;" +
+            "-fx-padding: 10 15;" +
+            "-fx-min-width: 300;"
+        );
 
-        TableColumn<Prodotto, String> colNome = new TableColumn<>("Nome");
-        colNome.setPrefWidth(200);
-        colNome.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNome()));
-        colNome.setCellFactory(tc -> {
-            TableCell<Prodotto, String> cell = new TableCell<>() {
-                private final Text text = new Text();
-                {
-                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(10));
-                    setGraphic(text);
-                }
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    text.setText(empty || item == null ? "" : item);
-                }
-            };
-            return cell;
-        });
+        Button searchButton = new Button("Cerca");
+        searchButton.setStyle(
+            "-fx-background-color: linear-gradient(to right, #00b4db, #0083b0);" +
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 14px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 20;" +
+            "-fx-padding: 10 20;" +
+            "-fx-cursor: hand;"
+        );
 
-        TableColumn<Prodotto, String> colDescrizione = new TableColumn<>("Descrizione");
-        colDescrizione.setPrefWidth(400);
-        colDescrizione.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDescrizione()));
-        colDescrizione.setCellFactory(tc -> {
-            TableCell<Prodotto, String> cell = new TableCell<>() {
-                private final Text text = new Text();
-                {
-                    text.wrappingWidthProperty().bind(tc.widthProperty().subtract(10));
-                    setGraphic(text);
-                }
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    text.setText(empty || item == null ? "" : item);
-                }
-            };
-            return cell;
-        });
+        searchBox.getChildren().addAll(searchField, searchButton);
 
-        TableColumn<Prodotto, String> colPrezzo = new TableColumn<>("Prezzo");
-        colPrezzo.setPrefWidth(100);
-        colPrezzo.setCellValueFactory(data -> new SimpleStringProperty(String.format("%.2f €", data.getValue().getPrezzo())));
+        // Container per le card dei prodotti
+        FlowPane productCardsContainer = new FlowPane();
+        productCardsContainer.setHgap(20);
+        productCardsContainer.setVgap(20);
+        productCardsContainer.setPadding(new Insets(20));
+        productCardsContainer.setAlignment(Pos.CENTER);
 
-        risultatiTable.getColumns().addAll(colId, colNome, colDescrizione, colPrezzo);
+        // ScrollPane per contenere le card
+        ScrollPane scrollPane = new ScrollPane(productCardsContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-        Button eliminaButton = creaButton("Elimina Selezionato");
-        eliminaButton.setVisible(false);
-
-        cercaButton.setOnAction(e -> {
-            String input = campoId.getText().trim().toLowerCase();
-            risultatiTable.getItems().clear();
-            eliminaButton.setVisible(false);
-
-            if (input.isEmpty()) {
-                return;
-            }
+        // Funzione per caricare i prodotti
+        Runnable loadProducts = () -> {
+            productCardsContainer.getChildren().clear();
+            String searchText = searchField.getText().trim().toLowerCase();
 
             for (Prodotto prodotto : listaProdotti) {
-                if (prodotto.getId().toLowerCase().contains(input) ||
-                        prodotto.getNome().toLowerCase().contains(input)) {
-                    risultatiTable.getItems().add(prodotto);
-                }
-            }
-        });
-
-        campoId.setOnAction(e -> cercaButton.fire());
-
-        risultatiTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-            eliminaButton.setVisible(newSelection != null);
-        });
-
-        eliminaButton.setOnAction(e -> {
-            Prodotto selectedProduct = risultatiTable.getSelectionModel().getSelectedItem();
-            if (selectedProduct != null) {
-                Stage stage = (Stage) eliminaButton.getScene().getWindow();
-
+                if (searchText.isEmpty() || 
+                    prodotto.getNome().toLowerCase().contains(searchText) ||
+                    prodotto.getId().toLowerCase().contains(searchText)) {
+                    VBox card = createProductCard(prodotto);
+                    
+                    // Aggiungi il pulsante di eliminazione
+                    Button deleteButton = new Button("Elimina");
+                    deleteButton.setStyle(
+                        "-fx-background-color: #e74c3c;" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-padding: 8 15;" +
+                        "-fx-cursor: hand;"
+                    );
+                    
+                    deleteButton.setOnMouseEntered(e -> deleteButton.setStyle(
+                        "-fx-background-color: #c0392b;" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-padding: 8 15;" +
+                        "-fx-cursor: hand;"
+                    ));
+                    
+                    deleteButton.setOnMouseExited(e -> deleteButton.setStyle(
+                        "-fx-background-color: #e74c3c;" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-padding: 8 15;" +
+                        "-fx-cursor: hand;"
+                    ));
+                    
+                    deleteButton.setOnAction(e -> {
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
                 alert.setTitle("Conferma eliminazione");
-                alert.setHeaderText("Sei sicuro di voler eliminare il prodotto \"" + selectedProduct.getNome() + "\"?");
+                        alert.setHeaderText("Sei sicuro di voler eliminare il prodotto \"" + prodotto.getNome() + "\"?");
                 alert.setContentText("L'operazione non può essere annullata.");
-                alert.initOwner(stage);
+                        alert.initOwner(scene.getWindow());
 
                 Optional<ButtonType> result = alert.showAndWait();
                 if (result.isPresent() && result.get() == ButtonType.OK) {
                     try {
-                        int id = Integer.parseInt(selectedProduct.getId());
+                                int id = Integer.parseInt(prodotto.getId());
                         String rispostaServer = Server.eliminaProdotto(id);
                         if (rispostaServer.toLowerCase().contains("successo")) {
-                            listaProdotti.remove(selectedProduct);
-                            risultatiTable.getItems().remove(selectedProduct);
+                                    listaProdotti.remove(prodotto);
+                                    productCardsContainer.getChildren().remove(card);
 
                             Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
                             successAlert.setTitle("Successo");
@@ -975,13 +1231,227 @@ public class schermataPrincipale extends Application {
                         errorAlert.setHeaderText(null);
                         errorAlert.setContentText("ID prodotto non valido.");
                         errorAlert.showAndWait();
-                    }
                 }
             }
         });
 
-        vbox.getChildren().addAll(idText, campoId, cercaButton, risultatiTable, eliminaButton);
+                    card.getChildren().add(deleteButton);
+                    productCardsContainer.getChildren().add(card);
+                }
+            }
+        };
+
+        loadProducts.run();
+
+        searchButton.setOnAction(e -> loadProducts.run());
+        searchField.setOnAction(e -> loadProducts.run());
+
+        vbox.getChildren().addAll(titleLabel, searchBox, scrollPane);
         return vbox;
+    }
+
+    private Pane schermataUtenti() {
+        VBox vbox = new VBox(20);
+        vbox.setPadding(new Insets(20));
+        vbox.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);");
+
+        // Titolo
+        Label titleLabel = new Label("Visualizzazione Utenti");
+        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 24));
+        titleLabel.setStyle("-fx-text-fill: #2c3e50;");
+
+        // Barra di ricerca
+        HBox searchBox = new HBox(10);
+        searchBox.setAlignment(Pos.CENTER);
+        searchBox.setPadding(new Insets(10));
+
+        TextField searchField = new TextField();
+        searchField.setPromptText("Cerca per nome, cognome o username...");
+        searchField.setStyle(
+                "-fx-background-color: white;" +
+                        "-fx-text-fill: #2c3e50;" +
+                        "-fx-prompt-text-fill: #7f8c8d;" +
+                        "-fx-border-color: #00b4db;" +
+                        "-fx-border-radius: 20;" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-padding: 10 15;" +
+                        "-fx-min-width: 300;"
+        );
+
+        Button searchButton = new Button("Cerca");
+        searchButton.setStyle(
+                "-fx-background-color: linear-gradient(to right, #00b4db, #0083b0);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-padding: 10 20;" +
+                        "-fx-cursor: hand;"
+        );
+
+        searchBox.getChildren().addAll(searchField, searchButton);
+
+        // Container per le card degli utenti
+        FlowPane userCardsContainer = new FlowPane();
+        userCardsContainer.setHgap(20);
+        userCardsContainer.setVgap(20);
+        userCardsContainer.setPadding(new Insets(20));
+        userCardsContainer.setAlignment(Pos.CENTER);
+
+        // ScrollPane per contenere le card
+        ScrollPane scrollPane = new ScrollPane(userCardsContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+        // Funzione per caricare gli utenti
+        Runnable loadUsers = () -> {
+            userCardsContainer.getChildren().clear();
+            try {
+                URL url = new URL("https://lucacassina.altervista.org/ecommerce/tornaUtenti.php");
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder responseBuilder = new StringBuilder();
+                String line;
+
+                while ((line = in.readLine()) != null) {
+                    responseBuilder.append(line);
+                }
+                in.close();
+                connection.disconnect();
+
+                String response = responseBuilder.toString();
+                String[] lines = response.split("<br>");
+
+                Map<String, String> currentUser = null;
+                String searchText = searchField.getText().trim().toLowerCase();
+
+                for (String line1 : lines) {
+                    line1 = line1.trim();
+                    if (line1.isEmpty()) continue;
+
+                    if (line1.startsWith("ID Account:")) {
+                        if (currentUser != null && currentUser.containsKey("id")) {
+                            // Verifica se l'utente corrisponde alla ricerca
+                            if (searchText.isEmpty() ||
+                                    currentUser.get("nome").toLowerCase().contains(searchText) ||
+                                    currentUser.get("cognome").toLowerCase().contains(searchText) ||
+                                    currentUser.get("username").toLowerCase().contains(searchText)) {
+                                userCardsContainer.getChildren().add(createUserCard(currentUser));
+                            }
+                        }
+                        currentUser = new HashMap<>();
+                        currentUser.put("id", line1.substring("ID Account:".length()).trim());
+                    }
+                    else if (currentUser != null) {
+                        if (line1.startsWith("Username:")) {
+                            currentUser.put("username", line1.substring("Username:".length()).trim());
+                        } else if (line1.startsWith("Email:")) {
+                            currentUser.put("email", line1.substring("Email:".length()).trim());
+                        } else if (line1.startsWith("Nome:")) {
+                            currentUser.put("nome", line1.substring("Nome:".length()).trim());
+                        } else if (line1.startsWith("Cognome:")) {
+                            currentUser.put("cognome", line1.substring("Cognome:".length()).trim());
+                        }
+                    }
+                }
+
+                // Aggiungi l'ultimo utente
+                if (currentUser != null && currentUser.containsKey("id")) {
+                    if (searchText.isEmpty() ||
+                            currentUser.get("nome").toLowerCase().contains(searchText) ||
+                            currentUser.get("cognome").toLowerCase().contains(searchText) ||
+                            currentUser.get("username").toLowerCase().contains(searchText)) {
+                        userCardsContainer.getChildren().add(createUserCard(currentUser));
+                    }
+                }
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                Label errorLabel = new Label("Errore nel caricamento degli utenti: " + ex.getMessage());
+                errorLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 14px;");
+                userCardsContainer.getChildren().add(errorLabel);
+            }
+        };
+
+        loadUsers.run();
+
+        searchButton.setOnAction(e -> loadUsers.run());
+        searchField.setOnAction(e -> loadUsers.run());
+
+        vbox.getChildren().addAll(titleLabel, searchBox, scrollPane);
+        return vbox;
+    }
+
+    private VBox createUserCard(Map<String, String> user) {
+        VBox card = new VBox(10);
+        card.setPadding(new Insets(20));
+        card.setStyle(
+                "-fx-background-color: white;" +
+                        "-fx-background-radius: 15;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);" +
+                        "-fx-min-width: 300;" +
+                        "-fx-max-width: 300;"
+        );
+
+        String initials = "";
+        if (user.containsKey("nome") && user.containsKey("cognome")) {
+            String nome = user.get("nome");
+            String cognome = user.get("cognome");
+            if (!nome.isEmpty() && !cognome.isEmpty()) {
+                initials = nome.substring(0, 1) + cognome.substring(0, 1);
+            }
+        }
+
+        Circle avatar = new Circle(40);
+        avatar.setStyle(
+                "-fx-fill: linear-gradient(to bottom right, #00b4db, #0083b0);" +
+                        "-fx-stroke: white;" +
+                        "-fx-stroke-width: 2;"
+        );
+
+        Text avatarText = new Text(initials.toUpperCase());
+        avatarText.setFont(Font.font("System", FontWeight.BOLD, 24));
+        avatarText.setFill(Color.WHITE);
+
+        StackPane avatarContainer = new StackPane(avatar, avatarText);
+        avatarContainer.setAlignment(Pos.CENTER);
+
+        Label nameLabel = new Label(user.get("nome") + " " + user.get("cognome"));
+        nameLabel.setFont(Font.font("System", FontWeight.BOLD, 18));
+        nameLabel.setStyle("-fx-text-fill: #2c3e50;");
+
+        Label usernameLabel = new Label("@" + user.get("username"));
+        usernameLabel.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 14px;");
+
+        Label emailLabel = new Label(user.get("email"));
+        emailLabel.setStyle("-fx-text-fill: #34495e; -fx-font-size: 14px;");
+
+        Label idLabel = new Label("ID: " + user.get("id"));
+        idLabel.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 12px;");
+
+        card.setOnMouseEntered(e -> card.setStyle(
+                "-fx-background-color: #f8f9fa;" +
+                        "-fx-background-radius: 15;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 15, 0, 0, 0);" +
+                        "-fx-min-width: 300;" +
+                        "-fx-max-width: 300;"
+        ));
+
+        card.setOnMouseExited(e -> card.setStyle(
+                "-fx-background-color: white;" +
+                        "-fx-background-radius: 15;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);" +
+                        "-fx-min-width: 300;" +
+                        "-fx-max-width: 300;"
+        ));
+
+        card.getChildren().addAll(avatarContainer, nameLabel, usernameLabel, emailLabel, idLabel);
+        return card;
     }
 
     private Label creaLabel(String testo) {
@@ -1065,7 +1535,132 @@ public class schermataPrincipale extends Application {
         return button;
     }
 
+    private VBox createProductCard(Prodotto prodotto) {
+        VBox card = new VBox(15);
+        card.setPadding(new Insets(20));
+        card.setStyle(
+            "-fx-background-color: white;" +
+            "-fx-background-radius: 15;" +
+            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);" +
+            "-fx-min-width: 300;" +
+            "-fx-max-width: 300;"
+        );
+
+        Circle idCircle = new Circle(30);
+        idCircle.setStyle(
+            "-fx-fill: linear-gradient(to bottom right, #00b4db, #0083b0);" +
+            "-fx-stroke: white;" +
+            "-fx-stroke-width: 2;"
+        );
+
+        String[] words = prodotto.getNome().split(" ");
+        String initials = "";
+        if (words.length >= 2) {
+            initials = words[0].substring(0, 1) + words[1].substring(0, 1);
+        } else if (words.length == 1) {
+            initials = words[0].substring(0, Math.min(2, words[0].length()));
+        }
+
+        Text idText = new Text(initials.toUpperCase());
+        idText.setFont(Font.font("System", FontWeight.BOLD, 16));
+        idText.setFill(Color.WHITE);
+
+        StackPane idContainer = new StackPane(idCircle, idText);
+        idContainer.setAlignment(Pos.CENTER);
+
+        Label nameLabel = new Label(prodotto.getNome());
+        nameLabel.setFont(Font.font("System", FontWeight.BOLD, 18));
+        nameLabel.setStyle("-fx-text-fill: #2c3e50;");
+
+        Label idLabel = new Label("ID: " + prodotto.getId());
+        idLabel.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 12px;");
+
+        Label descriptionLabel = new Label(prodotto.getDescrizione());
+        descriptionLabel.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 14px;");
+        descriptionLabel.setWrapText(true);
+
+        Label priceLabel = new Label(String.format("%.2f €", prodotto.getPrezzo()));
+        priceLabel.setFont(Font.font("System", FontWeight.BOLD, 20));
+        priceLabel.setStyle("-fx-text-fill: #2c3e50;");
+
+        VBox sizesBox = new VBox(8);
+        sizesBox.setStyle("-fx-background-color: transparent;");
+
+        Label sizesTitle = new Label("Disponibilità");
+        sizesTitle.setStyle("-fx-text-fill: #95a5a6; -fx-font-size: 12px;");
+
+        GridPane sizesGrid = new GridPane();
+        sizesGrid.setHgap(6);
+        sizesGrid.setVgap(6);
+        sizesGrid.setAlignment(Pos.CENTER_LEFT);
+
+        String[] sizes = prodotto.getTaglie().split(",");
+        int col = 0;
+        int row = 0;
+        int maxCols = 4;
+
+        for (String size : sizes) {
+            String[] parts = size.split(":");
+            if (parts.length == 2) {
+                String sizeLabel = parts[0].trim();
+                String quantity = parts[1].trim();
+
+                StackPane sizeBox = new StackPane();
+                sizeBox.setStyle(
+                    "-fx-background-color: #f8f9fa;" +
+                    "-fx-background-radius: 4;" +
+                    "-fx-padding: 6;" +
+                    "-fx-border-color: #e0e0e0;" +
+                    "-fx-border-radius: 4;" +
+                    "-fx-min-width: 60;"
+                );
+
+                VBox sizeContent = new VBox(2);
+                sizeContent.setAlignment(Pos.CENTER);
+
+                Label sizeText = new Label(sizeLabel);
+                sizeText.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 12px; -fx-font-weight: bold;");
+
+                Label quantityText = new Label(quantity);
+                quantityText.setStyle("-fx-text-fill: #95a5a6; -fx-font-size: 11px;");
+
+                sizeContent.getChildren().addAll(sizeText, quantityText);
+                sizeBox.getChildren().add(sizeContent);
+
+                sizesGrid.add(sizeBox, col, row);
+
+                col++;
+                if (col >= maxCols) {
+                    col = 0;
+                    row++;
+                }
+            }
+        }
+
+        sizesBox.getChildren().addAll(sizesTitle, sizesGrid);
+
+        card.setOnMouseEntered(e -> card.setStyle(
+            "-fx-background-color: #f8f9fa;" +
+            "-fx-background-radius: 15;" +
+            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 15, 0, 0, 0);" +
+            "-fx-min-width: 300;" +
+            "-fx-max-width: 300;"
+        ));
+
+        card.setOnMouseExited(e -> card.setStyle(
+            "-fx-background-color: white;" +
+            "-fx-background-radius: 15;" +
+            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);" +
+            "-fx-min-width: 300;" +
+            "-fx-max-width: 300;"
+        ));
+
+        card.getChildren().addAll(idContainer, nameLabel, idLabel, descriptionLabel, priceLabel, sizesBox);
+        return card;
+    }
+
     public static void main(String[] args) {
         launch();
     }
 }
+
