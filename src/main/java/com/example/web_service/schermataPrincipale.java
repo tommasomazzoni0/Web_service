@@ -48,6 +48,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Hyperlink;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -326,7 +327,7 @@ public class schermataPrincipale extends Application {
                     fadeOut.setFromValue(1.0);
                     fadeOut.setToValue(0.0);
                     fadeOut.setOnFinished(e -> {
-        listaProdotti = server.getProdotti();
+                        listaProdotti = server.getProdotti();
                         showMainScreen();
                     });
                     fadeOut.play();
@@ -638,7 +639,7 @@ public class schermataPrincipale extends Application {
         Label nomeText = creaLabel("Nome prodotto:");
         TextField nome = creaTextField("Inserisci nome prodotto");
 
-        File[] immagineSelezionata = new File[1]; // file immagine da inviare
+        File[] immagineSelezionata = new File[1];
 
         HBox hboxIdNome = new HBox(10, nomeText, nome);
         hboxIdNome.setAlignment(Pos.CENTER_LEFT);
@@ -713,7 +714,10 @@ public class schermataPrincipale extends Application {
         colTaglia.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getKey()));
         colQuantita.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getValue()).asObject());
         tabellaTaglie.getColumns().addAll(colTaglia, colQuantita);
-        tabellaTaglie.setPrefSize(200, 200);
+        tabellaTaglie.setPrefWidth(200);
+        tabellaTaglie.setMaxWidth(200);
+        tabellaTaglie.setPrefHeight(200);
+        tabellaTaglie.setMaxHeight(200);
 
         aggiungiTaglia.setOnAction(e -> {
             String taglia = tagliaText.getValue();
@@ -764,7 +768,6 @@ public class schermataPrincipale extends Application {
                 return;
             }
 
-            // Se usi un metodo server.inserisciProdotto puoi passare il nome immagine
             String risposta = server.inserisciProdotto(nomeProdotto, descrizioneProdotto, prezzoProdotto, taglieProdotto, immagineSelezionata[0].getName());
 
             if (risposta.equals("Prodotto inserito con successo.")) {
@@ -847,27 +850,6 @@ public class schermataPrincipale extends Application {
         }));
         Label euroSymbol = creaLabel("€");
         HBox hboxPrezzo = new HBox(10, prezzoText, prezzo, euroSymbol);
-
-        Button caricaFotoButton = creaButton("Carica nuova foto");
-        Label fotoCaricataLabel = creaLabel("Nuova foto caricata correttamente");
-        fotoCaricataLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #00FF00; -fx-font-weight: bold;");
-        Button eliminaFotoButton = creaButton("Elimina foto");
-        fotoCaricataLabel.setVisible(false);
-        eliminaFotoButton.setVisible(false);
-
-        BooleanProperty fotoCaricata = new SimpleBooleanProperty(false);
-        caricaFotoButton.setOnAction(e -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Immagini", "*.png", "*.jpg", "*.jpeg", "*.gif"));
-            File selectedFile = fileChooser.showOpenDialog(scene.getWindow());
-            if (selectedFile != null) fotoCaricata.set(true);
-        });
-        eliminaFotoButton.setOnAction(e -> fotoCaricata.set(false));
-        fotoCaricata.addListener((obs, oldVal, newVal) -> {
-            caricaFotoButton.setVisible(!newVal);
-            fotoCaricataLabel.setVisible(newVal);
-            eliminaFotoButton.setVisible(newVal);
-        });
 
         Label taglieLabel = creaLabel("Taglie disponibili:");
         ChoiceBox<String> tagliaText = new ChoiceBox<>();
@@ -955,7 +937,6 @@ public class schermataPrincipale extends Application {
 
             server.aggiornaProdotto(id, nomeVal, descrizioneVal, Float.parseFloat(prezzoVal), taglieString.toString());
 
-            // Mostra la stringa di successo
             successoLabel.setText("Prodotto aggiornato con successo!");
             successoLabel.setVisible(true);
         });
@@ -991,7 +972,7 @@ public class schermataPrincipale extends Application {
         HBox hboxTaglie = new HBox(10, tagliaText, campoQuantitaTaglia, aggiungiTaglia);
 
         vbox.getChildren().addAll(hboxIdNome, descrizioneLabel, descrizione, hboxPrezzo, taglieLabel, hboxTaglie,
-                erroreLabel, tabellaTaglie, caricaFotoButton, fotoCaricataLabel, eliminaFotoButton, successoLabel, aggiorna);
+                erroreLabel, tabellaTaglie, successoLabel, aggiorna);
 
         return vbox;
     }
@@ -1012,37 +993,35 @@ public class schermataPrincipale extends Application {
         TextField searchField = new TextField();
         searchField.setPromptText("Cerca per nome o ID prodotto...");
         searchField.setStyle(
-            "-fx-background-color: white;" +
-            "-fx-text-fill: #2c3e50;" +
-            "-fx-prompt-text-fill: #7f8c8d;" +
-            "-fx-border-color: #00b4db;" +
-            "-fx-border-radius: 20;" +
-            "-fx-background-radius: 20;" +
-            "-fx-padding: 10 15;" +
-            "-fx-min-width: 300;"
+                "-fx-background-color: white;" +
+                        "-fx-text-fill: #2c3e50;" +
+                        "-fx-prompt-text-fill: #7f8c8d;" +
+                        "-fx-border-color: #00b4db;" +
+                        "-fx-border-radius: 20;" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-padding: 10 15;" +
+                        "-fx-min-width: 300;"
         );
 
         Button searchButton = new Button("Cerca");
         searchButton.setStyle(
-            "-fx-background-color: linear-gradient(to right, #00b4db, #0083b0);" +
-            "-fx-text-fill: white;" +
-            "-fx-font-size: 14px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-background-radius: 20;" +
-            "-fx-padding: 10 20;" +
-            "-fx-cursor: hand;"
+                "-fx-background-color: linear-gradient(to right, #00b4db, #0083b0);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-padding: 10 20;" +
+                        "-fx-cursor: hand;"
         );
 
         searchBox.getChildren().addAll(searchField, searchButton);
 
-        // Container per le card dei prodotti
         FlowPane productCardsContainer = new FlowPane();
         productCardsContainer.setHgap(20);
         productCardsContainer.setVgap(20);
         productCardsContainer.setPadding(new Insets(20));
         productCardsContainer.setAlignment(Pos.CENTER);
 
-        // ScrollPane per contenere le card
         ScrollPane scrollPane = new ScrollPane(productCardsContainer);
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
@@ -1050,15 +1029,17 @@ public class schermataPrincipale extends Application {
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-        // Funzione per caricare i prodotti
         Runnable loadProducts = () -> {
+            // Aggiorna la lista dei prodotti dal server
+            listaProdotti = server.getProdotti();
+            
             productCardsContainer.getChildren().clear();
             String searchText = searchField.getText().trim().toLowerCase();
 
             for (Prodotto prodotto : listaProdotti) {
-                if (searchText.isEmpty() || 
-                    prodotto.getNome().toLowerCase().contains(searchText) ||
-                    prodotto.getId().toLowerCase().contains(searchText)) {
+                if (searchText.isEmpty() ||
+                        prodotto.getNome().toLowerCase().contains(searchText) ||
+                        prodotto.getId().toLowerCase().contains(searchText)) {
                     productCardsContainer.getChildren().add(createProductCard(prodotto));
                 }
             }
@@ -1067,7 +1048,6 @@ public class schermataPrincipale extends Application {
         // Carica i prodotti all'avvio
         loadProducts.run();
 
-        // Gestione ricerca
         searchButton.setOnAction(e -> loadProducts.run());
         searchField.setOnAction(e -> loadProducts.run());
 
@@ -1097,6 +1077,9 @@ public class schermataPrincipale extends Application {
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
+        // Aggiorna la lista dei prodotti dal server
+        listaProdotti = server.getProdotti();
+        
         for (Prodotto prodotto : listaProdotti) {
             productCardsContainer.getChildren().add(createProductCard(prodotto));
         }
@@ -1110,12 +1093,15 @@ public class schermataPrincipale extends Application {
         vbox.setPadding(new Insets(20));
         vbox.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);");
 
-        // Titolo
         Label titleLabel = new Label("Elimina Prodotto");
         titleLabel.setFont(Font.font("System", FontWeight.BOLD, 24));
         titleLabel.setStyle("-fx-text-fill: #2c3e50;");
 
-        // Barra di ricerca
+        // Area per i messaggi di alert
+        VBox alertBox = new VBox(10);
+        alertBox.setPadding(new Insets(10));
+        alertBox.setStyle("-fx-background-color: transparent;");
+
         HBox searchBox = new HBox(10);
         searchBox.setAlignment(Pos.CENTER);
         searchBox.setPadding(new Insets(10));
@@ -1123,37 +1109,35 @@ public class schermataPrincipale extends Application {
         TextField searchField = new TextField();
         searchField.setPromptText("Cerca per nome o ID prodotto...");
         searchField.setStyle(
-            "-fx-background-color: white;" +
-            "-fx-text-fill: #2c3e50;" +
-            "-fx-prompt-text-fill: #7f8c8d;" +
-            "-fx-border-color: #00b4db;" +
-            "-fx-border-radius: 20;" +
-            "-fx-background-radius: 20;" +
-            "-fx-padding: 10 15;" +
-            "-fx-min-width: 300;"
+                "-fx-background-color: white;" +
+                        "-fx-text-fill: #2c3e50;" +
+                        "-fx-prompt-text-fill: #7f8c8d;" +
+                        "-fx-border-color: #00b4db;" +
+                        "-fx-border-radius: 20;" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-padding: 10 15;" +
+                        "-fx-min-width: 300;"
         );
 
         Button searchButton = new Button("Cerca");
         searchButton.setStyle(
-            "-fx-background-color: linear-gradient(to right, #00b4db, #0083b0);" +
-            "-fx-text-fill: white;" +
-            "-fx-font-size: 14px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-background-radius: 20;" +
-            "-fx-padding: 10 20;" +
-            "-fx-cursor: hand;"
+                "-fx-background-color: linear-gradient(to right, #00b4db, #0083b0);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-padding: 10 20;" +
+                        "-fx-cursor: hand;"
         );
 
         searchBox.getChildren().addAll(searchField, searchButton);
 
-        // Container per le card dei prodotti
         FlowPane productCardsContainer = new FlowPane();
         productCardsContainer.setHgap(20);
         productCardsContainer.setVgap(20);
         productCardsContainer.setPadding(new Insets(20));
         productCardsContainer.setAlignment(Pos.CENTER);
 
-        // ScrollPane per contenere le card
         ScrollPane scrollPane = new ScrollPane(productCardsContainer);
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
@@ -1161,86 +1145,111 @@ public class schermataPrincipale extends Application {
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-        // Funzione per caricare i prodotti
         Runnable loadProducts = () -> {
+            listaProdotti = server.getProdotti();
             productCardsContainer.getChildren().clear();
             String searchText = searchField.getText().trim().toLowerCase();
 
             for (Prodotto prodotto : listaProdotti) {
-                if (searchText.isEmpty() || 
-                    prodotto.getNome().toLowerCase().contains(searchText) ||
-                    prodotto.getId().toLowerCase().contains(searchText)) {
+                if (searchText.isEmpty() ||
+                        prodotto.getNome().toLowerCase().contains(searchText) ||
+                        prodotto.getId().toLowerCase().contains(searchText)) {
                     VBox card = createProductCard(prodotto);
-                    
-                    // Aggiungi il pulsante di eliminazione
+
                     Button deleteButton = new Button("Elimina");
                     deleteButton.setStyle(
-                        "-fx-background-color: #e74c3c;" +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-size: 14px;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-background-radius: 10;" +
-                        "-fx-padding: 8 15;" +
-                        "-fx-cursor: hand;"
+                            "-fx-background-color: #e74c3c;" +
+                                    "-fx-text-fill: white;" +
+                                    "-fx-font-size: 14px;" +
+                                    "-fx-font-weight: bold;" +
+                                    "-fx-background-radius: 10;" +
+                                    "-fx-padding: 8 15;" +
+                                    "-fx-cursor: hand;"
                     );
-                    
+
                     deleteButton.setOnMouseEntered(e -> deleteButton.setStyle(
-                        "-fx-background-color: #c0392b;" +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-size: 14px;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-background-radius: 10;" +
-                        "-fx-padding: 8 15;" +
-                        "-fx-cursor: hand;"
+                            "-fx-background-color: #c0392b;" +
+                                    "-fx-text-fill: white;" +
+                                    "-fx-font-size: 14px;" +
+                                    "-fx-font-weight: bold;" +
+                                    "-fx-background-radius: 10;" +
+                                    "-fx-padding: 8 15;" +
+                                    "-fx-cursor: hand;"
                     ));
-                    
+
                     deleteButton.setOnMouseExited(e -> deleteButton.setStyle(
-                        "-fx-background-color: #e74c3c;" +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-size: 14px;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-background-radius: 10;" +
-                        "-fx-padding: 8 15;" +
-                        "-fx-cursor: hand;"
+                            "-fx-background-color: #e74c3c;" +
+                                    "-fx-text-fill: white;" +
+                                    "-fx-font-size: 14px;" +
+                                    "-fx-font-weight: bold;" +
+                                    "-fx-background-radius: 10;" +
+                                    "-fx-padding: 8 15;" +
+                                    "-fx-cursor: hand;"
                     ));
-                    
+
                     deleteButton.setOnAction(e -> {
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                alert.setTitle("Conferma eliminazione");
+                        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                        alert.setTitle("Conferma eliminazione");
                         alert.setHeaderText("Sei sicuro di voler eliminare il prodotto \"" + prodotto.getNome() + "\"?");
-                alert.setContentText("L'operazione non può essere annullata.");
+                        alert.setContentText("L'operazione non può essere annullata.");
                         alert.initOwner(scene.getWindow());
 
-                Optional<ButtonType> result = alert.showAndWait();
-                if (result.isPresent() && result.get() == ButtonType.OK) {
-                    try {
+                        Optional<ButtonType> result = alert.showAndWait();
+                        if (result.isPresent() && result.get() == ButtonType.OK) {
+                            try {
                                 int id = Integer.parseInt(prodotto.getId());
-                        String rispostaServer = Server.eliminaProdotto(id);
-                        if (rispostaServer.toLowerCase().contains("successo")) {
-                                    listaProdotti.remove(prodotto);
+                                String rispostaServer = Server.eliminaProdotto(id);
+                                if (rispostaServer.toLowerCase().contains("successo")) {
+                                    listaProdotti = server.getProdotti();
                                     productCardsContainer.getChildren().remove(card);
 
-                            Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
-                            successAlert.setTitle("Successo");
-                            successAlert.setHeaderText(null);
-                            successAlert.setContentText("Prodotto eliminato con successo.");
-                            successAlert.showAndWait();
-                        } else {
-                            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
-                            errorAlert.setTitle("Errore");
-                            errorAlert.setHeaderText(null);
-                            errorAlert.setContentText("Errore durante l'eliminazione del prodotto: " + rispostaServer);
-                            errorAlert.showAndWait();
+                                    // Aggiungi il messaggio di successo nell'alertBox
+                                    Label successLabel = new Label("Prodotto eliminato con successo");
+                                    successLabel.setStyle("-fx-text-fill: #27ae60; -fx-font-size: 14px; -fx-font-weight: bold;");
+                                    alertBox.getChildren().add(successLabel);
+                                    
+                                    // Rimuovi il messaggio dopo 3 secondi
+                                    new Thread(() -> {
+                                        try {
+                                            Thread.sleep(3000);
+                                            Platform.runLater(() -> alertBox.getChildren().remove(successLabel));
+                                        } catch (InterruptedException ex) {
+                                            ex.printStackTrace();
+                                        }
+                                    }).start();
+                                } else {
+                                    // Aggiungi il messaggio di errore nell'alertBox
+                                    Label errorLabel = new Label("Errore durante l'eliminazione del prodotto: " + rispostaServer);
+                                    errorLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 14px; -fx-font-weight: bold;");
+                                    alertBox.getChildren().add(errorLabel);
+                                    
+                                    // Rimuovi il messaggio dopo 3 secondi
+                                    new Thread(() -> {
+                                        try {
+                                            Thread.sleep(3000);
+                                            Platform.runLater(() -> alertBox.getChildren().remove(errorLabel));
+                                        } catch (InterruptedException ex) {
+                                            ex.printStackTrace();
+                                        }
+                                    }).start();
+                                }
+                            } catch (NumberFormatException ex) {
+                                // Aggiungi il messaggio di errore nell'alertBox
+                                Label errorLabel = new Label("ID prodotto non valido");
+                                errorLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 14px; -fx-font-weight: bold;");
+                                alertBox.getChildren().add(errorLabel);
+                                
+                                new Thread(() -> {
+                                    try {
+                                        Thread.sleep(3000);
+                                        Platform.runLater(() -> alertBox.getChildren().remove(errorLabel));
+                                    } catch (InterruptedException ey) {
+                                        ex.printStackTrace();
+                                    }
+                                }).start();
+                            }
                         }
-                    } catch (NumberFormatException ex) {
-                        Alert errorAlert = new Alert(Alert.AlertType.ERROR);
-                        errorAlert.setTitle("Errore");
-                        errorAlert.setHeaderText(null);
-                        errorAlert.setContentText("ID prodotto non valido.");
-                        errorAlert.showAndWait();
-                }
-            }
-        });
+                    });
 
                     card.getChildren().add(deleteButton);
                     productCardsContainer.getChildren().add(card);
@@ -1253,7 +1262,7 @@ public class schermataPrincipale extends Application {
         searchButton.setOnAction(e -> loadProducts.run());
         searchField.setOnAction(e -> loadProducts.run());
 
-        vbox.getChildren().addAll(titleLabel, searchBox, scrollPane);
+        vbox.getChildren().addAll(titleLabel, alertBox, searchBox, scrollPane);
         return vbox;
     }
 
@@ -1262,12 +1271,10 @@ public class schermataPrincipale extends Application {
         vbox.setPadding(new Insets(20));
         vbox.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);");
 
-        // Titolo
         Label titleLabel = new Label("Visualizzazione Utenti");
         titleLabel.setFont(Font.font("System", FontWeight.BOLD, 24));
         titleLabel.setStyle("-fx-text-fill: #2c3e50;");
 
-        // Barra di ricerca
         HBox searchBox = new HBox(10);
         searchBox.setAlignment(Pos.CENTER);
         searchBox.setPadding(new Insets(10));
@@ -1298,14 +1305,12 @@ public class schermataPrincipale extends Application {
 
         searchBox.getChildren().addAll(searchField, searchButton);
 
-        // Container per le card degli utenti
         FlowPane userCardsContainer = new FlowPane();
         userCardsContainer.setHgap(20);
         userCardsContainer.setVgap(20);
         userCardsContainer.setPadding(new Insets(20));
         userCardsContainer.setAlignment(Pos.CENTER);
 
-        // ScrollPane per contenere le card
         ScrollPane scrollPane = new ScrollPane(userCardsContainer);
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
@@ -1313,7 +1318,6 @@ public class schermataPrincipale extends Application {
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-        // Funzione per caricare gli utenti
         Runnable loadUsers = () -> {
             userCardsContainer.getChildren().clear();
             try {
@@ -1343,7 +1347,6 @@ public class schermataPrincipale extends Application {
 
                     if (line1.startsWith("ID Account:")) {
                         if (currentUser != null && currentUser.containsKey("id")) {
-                            // Verifica se l'utente corrisponde alla ricerca
                             if (searchText.isEmpty() ||
                                     currentUser.get("nome").toLowerCase().contains(searchText) ||
                                     currentUser.get("cognome").toLowerCase().contains(searchText) ||
@@ -1367,7 +1370,6 @@ public class schermataPrincipale extends Application {
                     }
                 }
 
-                // Aggiungi l'ultimo utente
                 if (currentUser != null && currentUser.containsKey("id")) {
                     if (searchText.isEmpty() ||
                             currentUser.get("nome").toLowerCase().contains(searchText) ||
@@ -1546,18 +1548,18 @@ public class schermataPrincipale extends Application {
         VBox card = new VBox(15);
         card.setPadding(new Insets(20));
         card.setStyle(
-            "-fx-background-color: white;" +
-            "-fx-background-radius: 15;" +
-            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);" +
-            "-fx-min-width: 300;" +
-            "-fx-max-width: 300;"
+                "-fx-background-color: white;" +
+                        "-fx-background-radius: 15;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);" +
+                        "-fx-min-width: 300;" +
+                        "-fx-max-width: 300;"
         );
 
         Circle idCircle = new Circle(30);
         idCircle.setStyle(
-            "-fx-fill: linear-gradient(to bottom right, #00b4db, #0083b0);" +
-            "-fx-stroke: white;" +
-            "-fx-stroke-width: 2;"
+                "-fx-fill: linear-gradient(to bottom right, #00b4db, #0083b0);" +
+                        "-fx-stroke: white;" +
+                        "-fx-stroke-width: 2;"
         );
 
         String[] words = prodotto.getNome().split(" ");
@@ -1585,6 +1587,32 @@ public class schermataPrincipale extends Application {
         Label descriptionLabel = new Label(prodotto.getDescrizione());
         descriptionLabel.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 14px;");
         descriptionLabel.setWrapText(true);
+
+        Hyperlink imageLink = new Hyperlink("Link immagine");
+        imageLink.setStyle("-fx-text-fill: #00b4db; -fx-font-size: 12px;");
+        imageLink.setOnAction(e -> {
+            String imageUrl = "https://lucacassina.altervista.org/ecommerce/sito/assets/img/" +
+                    prodotto.getNome().toLowerCase().replaceAll("\\s+", "") + ".png";
+
+            try {
+                String os = System.getProperty("os.name").toLowerCase();
+                Runtime runtime = Runtime.getRuntime();
+                
+                if (os.contains("win")) {
+                    runtime.exec("rundll32 url.dll,FileProtocolHandler " + imageUrl);
+                } else if (os.contains("mac")) {
+                    runtime.exec("open " + imageUrl);
+                } else {
+                    runtime.exec("xdg-open " + imageUrl);
+                }
+            } catch (Exception ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Errore");
+                alert.setHeaderText("Impossibile aprire il browser");
+                alert.setContentText("URL: " + imageUrl + "\nErrore: " + ex.getMessage());
+                alert.showAndWait();
+            }
+        });
 
         Label priceLabel = new Label(String.format("%.2f €", prodotto.getPrezzo()));
         priceLabel.setFont(Font.font("System", FontWeight.BOLD, 20));
@@ -1614,12 +1642,12 @@ public class schermataPrincipale extends Application {
 
                 StackPane sizeBox = new StackPane();
                 sizeBox.setStyle(
-                    "-fx-background-color: #f8f9fa;" +
-                    "-fx-background-radius: 4;" +
-                    "-fx-padding: 6;" +
-                    "-fx-border-color: #e0e0e0;" +
-                    "-fx-border-radius: 4;" +
-                    "-fx-min-width: 60;"
+                        "-fx-background-color: #f8f9fa;" +
+                                "-fx-background-radius: 4;" +
+                                "-fx-padding: 6;" +
+                                "-fx-border-color: #e0e0e0;" +
+                                "-fx-border-radius: 4;" +
+                                "-fx-min-width: 60;"
                 );
 
                 VBox sizeContent = new VBox(2);
@@ -1647,22 +1675,22 @@ public class schermataPrincipale extends Application {
         sizesBox.getChildren().addAll(sizesTitle, sizesGrid);
 
         card.setOnMouseEntered(e -> card.setStyle(
-            "-fx-background-color: #f8f9fa;" +
-            "-fx-background-radius: 15;" +
-            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 15, 0, 0, 0);" +
-            "-fx-min-width: 300;" +
-            "-fx-max-width: 300;"
+                "-fx-background-color: #f8f9fa;" +
+                        "-fx-background-radius: 15;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 15, 0, 0, 0);" +
+                        "-fx-min-width: 300;" +
+                        "-fx-max-width: 300;"
         ));
 
         card.setOnMouseExited(e -> card.setStyle(
-            "-fx-background-color: white;" +
-            "-fx-background-radius: 15;" +
-            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);" +
-            "-fx-min-width: 300;" +
-            "-fx-max-width: 300;"
+                "-fx-background-color: white;" +
+                        "-fx-background-radius: 15;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);" +
+                        "-fx-min-width: 300;" +
+                        "-fx-max-width: 300;"
         ));
 
-        card.getChildren().addAll(idContainer, nameLabel, idLabel, descriptionLabel, priceLabel, sizesBox);
+        card.getChildren().addAll(idContainer, nameLabel, idLabel, descriptionLabel, imageLink, priceLabel, sizesBox);
         return card;
     }
 
