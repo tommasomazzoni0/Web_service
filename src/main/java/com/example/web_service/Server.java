@@ -30,8 +30,7 @@ public class Server {
 
         return response.toString();
     }
-
-    public static String inserisciProdotto(String nome, String descrizione, String prezzo, String taglie) {
+    public static String inserisciProdotto(String nome, String descrizione, String prezzo, String taglie, String nomeImmagine) {
         try {
             URL url = new URL("https://lucacassina.altervista.org/ecommerce/aggiungiProdotto.php");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -43,19 +42,19 @@ public class Server {
             String postData = "nome=" + URLEncoder.encode(nome, StandardCharsets.UTF_8) +
                     "&descrizione=" + URLEncoder.encode(descrizione, StandardCharsets.UTF_8) +
                     "&prezzo=" + URLEncoder.encode(prezzo, StandardCharsets.UTF_8) +
-                    "&taglie=" + URLEncoder.encode(taglie, StandardCharsets.UTF_8);
+                    "&taglie=" + URLEncoder.encode(taglie, StandardCharsets.UTF_8) +
+                    "&immagine=" + URLEncoder.encode(nomeImmagine, StandardCharsets.UTF_8);
 
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = postData.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
             }
 
-            // Ottieni la risposta dal server
             int statusCode = conn.getResponseCode();
             if (statusCode == HttpURLConnection.HTTP_OK) {
                 try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
                     String inputLine;
-                   StringBuilder response = new StringBuilder();
+                    StringBuilder response = new StringBuilder();
                     while ((inputLine = in.readLine()) != null) {
                         response.append(inputLine);
                     }
@@ -69,6 +68,7 @@ public class Server {
             return "Errore: " + e.getMessage();
         }
     }
+
 
     public static String eliminaProdotto(int id) {
         String urlString = "https://lucacassina.altervista.org/ecommerce/eliminaProdotto.php";

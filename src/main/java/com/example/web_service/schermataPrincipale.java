@@ -49,18 +49,17 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ScrollPane;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-import java.io.OutputStream;
 import java.net.URLEncoder;
 
 
@@ -639,10 +638,10 @@ public class schermataPrincipale extends Application {
         Label nomeText = creaLabel("Nome prodotto:");
         TextField nome = creaTextField("Inserisci nome prodotto");
 
+        File[] immagineSelezionata = new File[1]; // file immagine da inviare
+
         HBox hboxIdNome = new HBox(10, nomeText, nome);
         hboxIdNome.setAlignment(Pos.CENTER_LEFT);
-        hboxIdNome.setSpacing(10);
-
         nomeText.setPrefWidth(120);
         nome.setPrefWidth(200);
 
@@ -652,50 +651,48 @@ public class schermataPrincipale extends Application {
         Label prezzoText = new Label("Prezzo:");
         prezzoText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #333333;");
         TextField prezzo = new TextField();
-        UnaryOperator<TextFormatter.Change> integerFilter = change -> {
-            String newText = change.getText();
-            if (newText.matches("[0-9]*[.]?[0-9]*")) {
-                return change;
-            }
+        prezzo.setTextFormatter(new TextFormatter<>(change -> {
+            if (change.getText().matches("[0-9]*[.]?[0-9]*")) return change;
             return null;
-        };
-        TextFormatter<String> formatter = new TextFormatter<>(integerFilter);
-        prezzo.setTextFormatter(formatter);
+        }));
         prezzo.setPrefWidth(120);
 
         Label euroSymbol = creaLabel("€");
         euroSymbol.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #333333;");
-        HBox hboxPrezzo = new HBox(10);
-        hboxPrezzo.getChildren().addAll(prezzoText, prezzo, euroSymbol);
+        HBox hboxPrezzo = new HBox(10, prezzoText, prezzo, euroSymbol);
         hboxPrezzo.setAlignment(Pos.CENTER_LEFT);
 
         Button caricaFotoButton = creaButton("Carica foto");
-
         Label fotoCaricataLabel = creaLabel("Foto caricata correttamente");
         fotoCaricataLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #00FF00; -fx-font-weight: bold;");
-
         fotoCaricataLabel.setVisible(false);
 
         BooleanProperty fotoCaricata = new SimpleBooleanProperty(false);
 
+        Label erroreLabel = new Label("");
+        erroreLabel.setStyle("-fx-text-fill: red; -fx-font-size: 14px;");
+
+        Label successoLabel = new Label("");
+        successoLabel.setStyle("-fx-font-size: 14px; -fx-text-fill:green;");
+        successoLabel.setVisible(false);
+
         caricaFotoButton.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Immagini", "*.png", "*.jpg", "*.jpeg", "*.gif"));
-
             File selectedFile = fileChooser.showOpenDialog(scene.getWindow());
-
             if (selectedFile != null) {
-                fotoCaricata.set(true);
+                try {
+                    uploadImageToServer(selectedFile, nome.getText().trim());
+                    immagineSelezionata[0] = selectedFile;
+                    fotoCaricata.set(true);
+                } catch (IOException ex) {
+                    erroreLabel.setText("Errore durante l'upload dell'immagine.");
+                    ex.printStackTrace();
+                }
             }
         });
 
-        fotoCaricata.addListener((observable, oldValue, newValue) -> {
-            if (newValue) {
-                fotoCaricataLabel.setVisible(true);
-            } else {
-                fotoCaricataLabel.setVisible(false);
-            }
-        });
+        fotoCaricata.addListener((obs, oldVal, newVal) -> fotoCaricataLabel.setVisible(newVal));
 
         Label taglieLabel = creaLabel("Taglie disponibili:");
         ChoiceBox<String> tagliaText = new ChoiceBox<>();
@@ -705,74 +702,46 @@ public class schermataPrincipale extends Application {
 
         TextField campoQuantitaTaglia = new TextField();
         campoQuantitaTaglia.setPromptText("Quantità per taglia");
-
-        UnaryOperator<TextFormatter.Change> quantityFilter = change -> {
-            String newText = change.getText();
-            if (newText.matches("[0-9]*")) {
-                return change;
-            }
-            return null;
-        };
-        campoQuantitaTaglia.setTextFormatter(new TextFormatter<>(quantityFilter));
+        campoQuantitaTaglia.setTextFormatter(new TextFormatter<>(change -> change.getText().matches("[0-9]*") ? change : null));
 
         Button aggiungiTaglia = creaButton("Aggiungi");
         TableView<Pair<String, Integer>> tabellaTaglie = new TableView<>();
         TableColumn<Pair<String, Integer>, String> colTaglia = new TableColumn<>("Taglia");
         TableColumn<Pair<String, Integer>, Integer> colQuantita = new TableColumn<>("Quantità");
-
         colTaglia.setPrefWidth(100);
         colQuantita.setPrefWidth(100);
         colTaglia.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getKey()));
         colQuantita.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getValue()).asObject());
-
         tabellaTaglie.getColumns().addAll(colTaglia, colQuantita);
-        tabellaTaglie.setPrefWidth(200);
-        tabellaTaglie.setMaxWidth(200);
-        tabellaTaglie.setPrefHeight(200);
-        tabellaTaglie.setMaxHeight(200);
-
-        VBox tableContainer = new VBox(tabellaTaglie);
-        tableContainer.setMaxHeight(200);
-        tableContainer.setMaxWidth(200);
-
-        Label erroreLabel = new Label("");
-        erroreLabel.setStyle("-fx-text-fill: red; -fx-font-size: 14px;");
-
-        Label successoLabel = new Label("");
-        successoLabel.setStyle("-fx-font-size: 14px; -fx-text-fill:green;");
-        successoLabel.setVisible(false);
+        tabellaTaglie.setPrefSize(200, 200);
 
         aggiungiTaglia.setOnAction(e -> {
             String taglia = tagliaText.getValue();
             String quantitaStr = campoQuantitaTaglia.getText().trim();
             erroreLabel.setText("");
 
-            if (taglia.equals("Taglie disponibili")) {
-                erroreLabel.setText("Devi selezionare una taglia.");
-                return;
-            }
-            if (quantitaStr.isEmpty()) {
-                erroreLabel.setText("Devi inserire una quantità per la taglia selezionata.");
+            if (taglia.equals("Taglie disponibili") || quantitaStr.isEmpty()) {
+                erroreLabel.setText("Compila correttamente taglia e quantità.");
                 return;
             }
 
             if (quantitaStr.matches("[0-9]+")) {
-                int quantitaPerTaglia = Integer.parseInt(quantitaStr);
-                tabellaTaglie.getItems().add(new Pair<>(taglia, quantitaPerTaglia));
+                int quantita = Integer.parseInt(quantitaStr);
+                tabellaTaglie.getItems().add(new Pair<>(taglia, quantita));
                 tagliaText.getItems().remove(taglia);
                 tagliaText.setValue("Taglie disponibili");
                 campoQuantitaTaglia.clear();
             } else {
-                erroreLabel.setText("Devi inserire una quantità valida (numero intero).");
+                erroreLabel.setText("Quantità non valida.");
             }
         });
 
         tabellaTaglie.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
-                Pair<String, Integer> selectedItem = tabellaTaglie.getSelectionModel().getSelectedItem();
-                if (selectedItem != null) {
-                    tabellaTaglie.getItems().remove(selectedItem);
-                    tagliaText.getItems().add(selectedItem.getKey());  // Reinserisce la taglia nell'elenco
+                Pair<String, Integer> selected = tabellaTaglie.getSelectionModel().getSelectedItem();
+                if (selected != null) {
+                    tabellaTaglie.getItems().remove(selected);
+                    tagliaText.getItems().add(selected.getKey());
                 }
             }
         });
@@ -789,12 +758,15 @@ public class schermataPrincipale extends Application {
                     .map(pair -> pair.getKey() + ": " + pair.getValue())
                     .collect(Collectors.joining(", "));
 
-            if (nomeProdotto.isEmpty() || descrizioneProdotto.isEmpty() || prezzoProdotto.isEmpty() || tabellaTaglie.getItems().isEmpty()) {
-                erroreLabel.setText("Tutti i campi obbligatori devono essere compilati.");
+            if (nomeProdotto.isEmpty() || descrizioneProdotto.isEmpty() || prezzoProdotto.isEmpty()
+                    || tabellaTaglie.getItems().isEmpty() || immagineSelezionata[0] == null) {
+                erroreLabel.setText("Tutti i campi e l'immagine sono obbligatori.");
                 return;
             }
 
-            String risposta = server.inserisciProdotto(nomeProdotto, descrizioneProdotto, prezzoProdotto, taglieProdotto);
+            // Se usi un metodo server.inserisciProdotto puoi passare il nome immagine
+            String risposta = server.inserisciProdotto(nomeProdotto, descrizioneProdotto, prezzoProdotto, taglieProdotto, immagineSelezionata[0].getName());
+
             if (risposta.equals("Prodotto inserito con successo.")) {
                 successoLabel.setText("Prodotto inserito con successo!");
                 successoLabel.setVisible(true);
@@ -803,10 +775,49 @@ public class schermataPrincipale extends Application {
             }
         });
 
-        vbox.getChildren().addAll(hboxIdNome, descrizioneText, descrizione, hboxPrezzo, taglieLabel, hboxTaglie, erroreLabel, tableContainer, caricaFotoButton, fotoCaricataLabel, successoLabel, inserisci);
+        vbox.getChildren().addAll(hboxIdNome, descrizioneText, descrizione, hboxPrezzo, taglieLabel,
+                hboxTaglie, erroreLabel, tabellaTaglie, caricaFotoButton, fotoCaricataLabel, successoLabel, inserisci);
 
         return vbox;
     }
+
+    private void uploadImageToServer(File imageFile, String nomeProdotto) throws IOException {
+        String url = "https://lucacassina.altervista.org/ecommerce/sito/salvaImmagine.php";
+        String boundary = Long.toHexString(System.currentTimeMillis());
+        String CRLF = "\r\n";
+
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+        try (
+                OutputStream output = connection.getOutputStream();
+                PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8), true)
+        ) {
+            // Campo nome prodotto
+            writer.append("--").append(boundary).append(CRLF);
+            writer.append("Content-Disposition: form-data; name=\"nome\"").append(CRLF);
+            writer.append(CRLF).append(nomeProdotto).append(CRLF).flush();
+
+            // Campo file immagine
+            writer.append("--").append(boundary).append(CRLF);
+            writer.append("Content-Disposition: form-data; name=\"immagine\"; filename=\"")
+                    .append(imageFile.getName()).append("\"").append(CRLF);
+            writer.append("Content-Type: ").append(Files.probeContentType(imageFile.toPath())).append(CRLF);
+            writer.append(CRLF).flush();
+            Files.copy(imageFile.toPath(), output);
+            output.flush();
+            writer.append(CRLF).flush();
+
+            writer.append("--").append(boundary).append("--").append(CRLF).flush();
+        }
+
+        if (connection.getResponseCode() != 200) {
+            throw new IOException("Errore caricamento immagine: " + connection.getResponseMessage());
+        }
+    }
+
 
     private Pane schermataAggiorna() {
         VBox vbox = new VBox(15);
@@ -1069,19 +1080,16 @@ public class schermataPrincipale extends Application {
         vbox.setPadding(new Insets(20));
         vbox.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);");
 
-        // Titolo
         Label titleLabel = new Label("Catalogo Prodotti");
         titleLabel.setFont(Font.font("System", FontWeight.BOLD, 24));
         titleLabel.setStyle("-fx-text-fill: #2c3e50;");
 
-        // Container per le card dei prodotti
         FlowPane productCardsContainer = new FlowPane();
         productCardsContainer.setHgap(20);
         productCardsContainer.setVgap(20);
         productCardsContainer.setPadding(new Insets(20));
         productCardsContainer.setAlignment(Pos.CENTER);
 
-        // ScrollPane per contenere le card
         ScrollPane scrollPane = new ScrollPane(productCardsContainer);
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
@@ -1089,7 +1097,6 @@ public class schermataPrincipale extends Application {
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-        // Carica tutti i prodotti
         for (Prodotto prodotto : listaProdotti) {
             productCardsContainer.getChildren().add(createProductCard(prodotto));
         }
