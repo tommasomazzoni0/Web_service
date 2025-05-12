@@ -956,7 +956,7 @@ public class schermataPrincipale extends Application {
                 descrizione.setText(p.getDescrizione());
                 prezzo.setText(String.valueOf(p.getPrezzo()));
                 tabellaTaglie.getItems().clear();
-                taglieDisponibili.setAll("XS", "S", "M", "L", "XL", "XXL");
+                taglieDisponibili.setAll("XS", "S", "M", "L", "XL");
                 for (String taglia : p.getTaglie().split(",")) {
                     String[] parts = taglia.split(":");
                     if (parts.length == 2) {
