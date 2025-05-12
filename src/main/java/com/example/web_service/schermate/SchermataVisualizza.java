@@ -1,0 +1,243 @@
+package com.example.web_service.schermate;
+
+import com.example.web_service.Prodotto;
+import com.example.web_service.Server;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
+
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+
+public class SchermataVisualizza {
+    Server server= new Server();
+    ArrayList<Prodotto> listaProdotti;
+    public Pane schermataVisualizza() {
+        VBox vbox = new VBox(20);
+        vbox.setPadding(new Insets(20));
+        vbox.setStyle("-fx-background-color: rgba(255, 255, 255, 0.95); -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);");
+
+        Label titleLabel = new Label("Catalogo Prodotti");
+        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 24));
+        titleLabel.setStyle("-fx-text-fill: #2c3e50;");
+
+        FlowPane productCardsContainer = new FlowPane();
+        productCardsContainer.setHgap(20);
+        productCardsContainer.setVgap(20);
+        productCardsContainer.setPadding(new Insets(20));
+        productCardsContainer.setAlignment(Pos.CENTER);
+
+        ScrollPane scrollPane = new ScrollPane(productCardsContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+        // Aggiorna la lista dei prodotti dal server
+        listaProdotti = server.getProdotti();
+
+        for (Prodotto prodotto : listaProdotti) {
+            productCardsContainer.getChildren().add(createProductCard(prodotto));
+        }
+
+        vbox.getChildren().addAll(titleLabel, scrollPane);
+        return vbox;
+    }
+
+    private VBox createProductCard(Prodotto prodotto) {
+        VBox card = new VBox(15);
+        card.setPadding(new Insets(20));
+        card.setStyle(
+                "-fx-background-color: white;" +
+                        "-fx-background-radius: 15;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);" +
+                        "-fx-min-width: 300;" +
+                        "-fx-max-width: 300;"
+        );
+
+        Circle idCircle = new Circle(30);
+        idCircle.setStyle(
+                "-fx-fill: linear-gradient(to bottom right, #00b4db, #0083b0);" +
+                        "-fx-stroke: white;" +
+                        "-fx-stroke-width: 2;"
+        );
+
+        String[] words = prodotto.getNome().split(" ");
+        String initials = "";
+        if (words.length >= 2) {
+            initials = words[0].substring(0, 1) + words[1].substring(0, 1);
+        } else if (words.length == 1) {
+            initials = words[0].substring(0, Math.min(2, words[0].length()));
+        }
+
+        Text idText = new Text(initials.toUpperCase());
+        idText.setFont(Font.font("System", FontWeight.BOLD, 16));
+        idText.setFill(Color.WHITE);
+
+        StackPane idContainer = new StackPane(idCircle, idText);
+        idContainer.setAlignment(Pos.CENTER);
+
+        Label nameLabel = new Label(prodotto.getNome());
+        nameLabel.setFont(Font.font("System", FontWeight.BOLD, 18));
+        nameLabel.setStyle("-fx-text-fill: #2c3e50;");
+
+        Label idLabel = new Label("ID: " + prodotto.getId());
+        idLabel.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 12px;");
+
+        Label descriptionLabel = new Label(prodotto.getDescrizione());
+        descriptionLabel.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 14px;");
+        descriptionLabel.setWrapText(true);
+
+        Hyperlink imageLink = new Hyperlink("Link immagine");
+        imageLink.setStyle("-fx-text-fill: #00b4db; -fx-font-size: 12px;");
+
+        imageLink.setOnAction(e -> {
+            String baseUrl = "https://lucacassina.altervista.org/ecommerce/sito/assets/img/";
+            String nomeProdotto = prodotto.getNome().toLowerCase().replaceAll("\\s+", "");
+            String[] estensioni = {".png", ".jpg", ".jpeg", ".webp"};
+
+            new Thread(() -> {
+                String imageUrlTrovato = null;
+
+                for (String ext : estensioni) {
+                    String testUrl = baseUrl + nomeProdotto + ext;
+                    try {
+                        HttpURLConnection conn = (HttpURLConnection) new URL(testUrl).openConnection();
+                        conn.setRequestMethod("HEAD");
+                        conn.setConnectTimeout(3000); // 3 secondi
+                        conn.setReadTimeout(3000);
+                        int responseCode = conn.getResponseCode();
+                        if (responseCode == 200) {
+                            imageUrlTrovato = testUrl;
+                            break;
+                        }
+                    } catch (Exception ignored) {}
+                }
+
+                final String imageUrl = imageUrlTrovato;
+                if (imageUrl != null) {
+                    try {
+                        String os = System.getProperty("os.name").toLowerCase();
+                        Runtime runtime = Runtime.getRuntime();
+
+                        if (os.contains("win")) {
+                            runtime.exec("rundll32 url.dll,FileProtocolHandler " + imageUrl);
+                        } else if (os.contains("mac")) {
+                            runtime.exec("open " + imageUrl);
+                        } else {
+                            runtime.exec("xdg-open " + imageUrl);
+                        }
+                    } catch (Exception ex) {
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("Errore");
+                            alert.setHeaderText("Impossibile aprire il browser");
+                            alert.setContentText("URL: " + imageUrl + "\nErrore: " + ex.getMessage());
+                            alert.showAndWait();
+                        });
+                    }
+                } else {
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.WARNING);
+                        alert.setTitle("Immagine non trovata");
+                        alert.setHeaderText("Nessuna immagine trovata per il prodotto");
+                        alert.setContentText("Sono state provate le estensioni: .png, .jpg, .jpeg, .webp");
+                        alert.showAndWait();
+                    });
+                }
+            }).start();
+        });
+
+
+        Label priceLabel = new Label(String.format("%.2f €", prodotto.getPrezzo()));
+        priceLabel.setFont(Font.font("System", FontWeight.BOLD, 20));
+        priceLabel.setStyle("-fx-text-fill: #2c3e50;");
+
+        VBox sizesBox = new VBox(8);
+        sizesBox.setStyle("-fx-background-color: transparent;");
+
+        Label sizesTitle = new Label("Disponibilità");
+        sizesTitle.setStyle("-fx-text-fill: #95a5a6; -fx-font-size: 12px;");
+
+        GridPane sizesGrid = new GridPane();
+        sizesGrid.setHgap(6);
+        sizesGrid.setVgap(6);
+        sizesGrid.setAlignment(Pos.CENTER_LEFT);
+
+        String[] sizes = prodotto.getTaglie().split(",");
+        int col = 0;
+        int row = 0;
+        int maxCols = 4;
+
+        for (String size : sizes) {
+            String[] parts = size.split(":");
+            if (parts.length == 2) {
+                String sizeLabel = parts[0].trim();
+                String quantity = parts[1].trim();
+
+                StackPane sizeBox = new StackPane();
+                sizeBox.setStyle(
+                        "-fx-background-color: #f8f9fa;" +
+                                "-fx-background-radius: 4;" +
+                                "-fx-padding: 6;" +
+                                "-fx-border-color: #e0e0e0;" +
+                                "-fx-border-radius: 4;" +
+                                "-fx-min-width: 60;"
+                );
+
+                VBox sizeContent = new VBox(2);
+                sizeContent.setAlignment(Pos.CENTER);
+
+                Label sizeText = new Label(sizeLabel);
+                sizeText.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 12px; -fx-font-weight: bold;");
+
+                Label quantityText = new Label(quantity);
+                quantityText.setStyle("-fx-text-fill: #95a5a6; -fx-font-size: 11px;");
+
+                sizeContent.getChildren().addAll(sizeText, quantityText);
+                sizeBox.getChildren().add(sizeContent);
+
+                sizesGrid.add(sizeBox, col, row);
+
+                col++;
+                if (col >= maxCols) {
+                    col = 0;
+                    row++;
+                }
+            }
+        }
+
+        sizesBox.getChildren().addAll(sizesTitle, sizesGrid);
+
+        card.setOnMouseEntered(e -> card.setStyle(
+                "-fx-background-color: #f8f9fa;" +
+                        "-fx-background-radius: 15;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 15, 0, 0, 0);" +
+                        "-fx-min-width: 300;" +
+                        "-fx-max-width: 300;"
+        ));
+
+        card.setOnMouseExited(e -> card.setStyle(
+                "-fx-background-color: white;" +
+                        "-fx-background-radius: 15;" +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);" +
+                        "-fx-min-width: 300;" +
+                        "-fx-max-width: 300;"
+        ));
+
+        card.getChildren().addAll(idContainer, nameLabel, idLabel, descriptionLabel, imageLink, priceLabel, sizesBox);
+        return card;
+    }
+}
