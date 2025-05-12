@@ -548,7 +548,7 @@ public class schermataPrincipale extends Application {
         statsGrid.setAlignment(Pos.CENTER);
 
         statsGrid.add(createStatCard("Prodotti Totali", String.valueOf(listaProdotti.size()), "#00b4db"), 0, 0);
-        statsGrid.add(createStatCard("Funzionalità Attive", "8", "#0083b0"), 1, 0);
+        statsGrid.add(createStatCard("Funzionalità Attive", "6", "#0083b0"), 1, 0);
         statsGrid.add(createStatCard("Taglie Disponibili", "5", "#00b4db"), 2, 0);
 
         VBox quickActions = new VBox(15);
@@ -1590,29 +1590,64 @@ public class schermataPrincipale extends Application {
 
         Hyperlink imageLink = new Hyperlink("Link immagine");
         imageLink.setStyle("-fx-text-fill: #00b4db; -fx-font-size: 12px;");
-        imageLink.setOnAction(e -> {
-            String imageUrl = "https://lucacassina.altervista.org/ecommerce/sito/assets/img/" +
-                    prodotto.getNome().toLowerCase().replaceAll("\\s+", "") + ".png";
 
-            try {
-                String os = System.getProperty("os.name").toLowerCase();
-                Runtime runtime = Runtime.getRuntime();
-                
-                if (os.contains("win")) {
-                    runtime.exec("rundll32 url.dll,FileProtocolHandler " + imageUrl);
-                } else if (os.contains("mac")) {
-                    runtime.exec("open " + imageUrl);
-                } else {
-                    runtime.exec("xdg-open " + imageUrl);
+        imageLink.setOnAction(e -> {
+            String baseUrl = "https://lucacassina.altervista.org/ecommerce/sito/assets/img/";
+            String nomeProdotto = prodotto.getNome().toLowerCase().replaceAll("\\s+", "");
+            String[] estensioni = {".png", ".jpg", ".jpeg", ".webp"};
+
+            new Thread(() -> {
+                String imageUrlTrovato = null;
+
+                for (String ext : estensioni) {
+                    String testUrl = baseUrl + nomeProdotto + ext;
+                    try {
+                        HttpURLConnection conn = (HttpURLConnection) new URL(testUrl).openConnection();
+                        conn.setRequestMethod("HEAD");
+                        conn.setConnectTimeout(3000); // 3 secondi
+                        conn.setReadTimeout(3000);
+                        int responseCode = conn.getResponseCode();
+                        if (responseCode == 200) {
+                            imageUrlTrovato = testUrl;
+                            break;
+                        }
+                    } catch (Exception ignored) {}
                 }
-            } catch (Exception ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Errore");
-                alert.setHeaderText("Impossibile aprire il browser");
-                alert.setContentText("URL: " + imageUrl + "\nErrore: " + ex.getMessage());
-                alert.showAndWait();
-            }
+
+                final String imageUrl = imageUrlTrovato;
+                if (imageUrl != null) {
+                    try {
+                        String os = System.getProperty("os.name").toLowerCase();
+                        Runtime runtime = Runtime.getRuntime();
+
+                        if (os.contains("win")) {
+                            runtime.exec("rundll32 url.dll,FileProtocolHandler " + imageUrl);
+                        } else if (os.contains("mac")) {
+                            runtime.exec("open " + imageUrl);
+                        } else {
+                            runtime.exec("xdg-open " + imageUrl);
+                        }
+                    } catch (Exception ex) {
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("Errore");
+                            alert.setHeaderText("Impossibile aprire il browser");
+                            alert.setContentText("URL: " + imageUrl + "\nErrore: " + ex.getMessage());
+                            alert.showAndWait();
+                        });
+                    }
+                } else {
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.WARNING);
+                        alert.setTitle("Immagine non trovata");
+                        alert.setHeaderText("Nessuna immagine trovata per il prodotto");
+                        alert.setContentText("Sono state provate le estensioni: .png, .jpg, .jpeg, .webp");
+                        alert.showAndWait();
+                    });
+                }
+            }).start();
         });
+
 
         Label priceLabel = new Label(String.format("%.2f €", prodotto.getPrezzo()));
         priceLabel.setFont(Font.font("System", FontWeight.BOLD, 20));
