@@ -711,6 +711,10 @@ public class schermataPrincipale extends Application {
         TableColumn<Pair<String, Integer>, Integer> colQuantita = new TableColumn<>("Quantità");
         colTaglia.setPrefWidth(100);
         colQuantita.setPrefWidth(100);
+        colTaglia.setResizable(false);
+        colQuantita.setResizable(false);
+        colTaglia.setReorderable(false);
+        colQuantita.setReorderable(false);
         colTaglia.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getKey()));
         colQuantita.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getValue()).asObject());
         tabellaTaglie.getColumns().addAll(colTaglia, colQuantita);
@@ -870,6 +874,10 @@ public class schermataPrincipale extends Application {
         colQuantita.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getValue()).asObject());
         colTaglia.setPrefWidth(100);
         colQuantita.setPrefWidth(100);
+        colTaglia.setResizable(false);
+        colQuantita.setResizable(false);
+        colTaglia.setReorderable(false);
+        colQuantita.setReorderable(false);
         tabellaTaglie.getColumns().addAll(colTaglia, colQuantita);
         tabellaTaglie.setPrefWidth(200);
         tabellaTaglie.setMaxWidth(200);
